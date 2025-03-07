@@ -1,6 +1,6 @@
 # LinguaChat
 
-A mod for automatic chat message translation between players using Google Translate and DeepL.
+A minecraft mod for automatic chat message translation between players using Google Translate and DeepL.
 
 > [!NOTE]
 > LinguaChat makes your communication in Minecraft accessible in any language, automatically translating chat messages without interrupting gameplay!
