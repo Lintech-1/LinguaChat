@@ -1,0 +1,35 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+
+[[mods]]
+modId="Linguachat"
+version="1.0.0"
+displayName="LinguaChat"
+displayURL="https://github.com/Lintech-1/LinguaChat"
+logoFile="assets/linguachat/linguachat.png"
+credits="Thanks to the Forge team and translation service providers"
+authors="Lintech"
+description='''
+A Minecraft mod that automatically translates chat messages between players.
+
+Features:
+- Real-time translation of chat messages
+- Support for both Google Translate and DeepL
+- Configurable source and target languages
+- Option to show original messages
+'''
+
+[[dependencies.linguachat]]
+    modId="forge"
+    mandatory=true
+    versionRange="[47,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.linguachat]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.20.1,1.21)"
+    ordering="NONE"
+    side="BOTH" 

@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "linguachat",
+  "version": "${version}",
+  "name": "LinguaChat",
+  "description": "Автоматический перевод сообщений чата между игроками с использованием сервисов Google Translate и DeepL",
+  "authors": [
+    "Lintech"
+  ],
+  "contact": {
+    "homepage": "https://github.com/Lintech-1/LinguaChat",
+    "sources": "https://github.com/Lintech-1/LinguaChat"
+  },
+  "license": "MIT",
+  "icon": "assets/linguachat/linguachat.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.linguachat.LinguaChatMod"
+    ]
+  },
+  "mixins": [
+    "linguachat.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.10",
+    "minecraft": "~1.21.4",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+} 

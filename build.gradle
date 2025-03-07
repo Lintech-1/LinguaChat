@@ -1,0 +1,57 @@
+plugins {
+    id 'fabric-loom' version '1.6-SNAPSHOT'
+    id 'maven-publish'
+}
+
+version = '1.0.0'
+group = 'com.linguachat'
+archivesBaseName = 'linguachat'
+
+repositories {
+    maven { url 'https://maven.fabricmc.net/' }
+    maven { url 'https://api.modrinth.com/maven' }
+    maven { url 'https://maven.quiltmc.org/repository/release' }
+    maven { url 'https://maven.quiltmc.org/repository/snapshot' }
+    maven { url 'https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/' }
+    mavenCentral()
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:1.21.4"
+    mappings "net.fabricmc:yarn:1.21.4+build.1:v2"
+    modImplementation "net.fabricmc:fabric-loader:0.16.10"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:0.99.5+1.21"
+    
+    // DeepL API Client
+    include 'com.deepl.api:deepl-java:1.9.0'
+    implementation 'com.deepl.api:deepl-java:1.9.0'
+    
+    // JSON handling
+    implementation 'com.google.code.gson:gson:2.10.1'
+}
+
+processResources {
+    inputs.property "version", project.version
+    filteringCharset "UTF-8"
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = "UTF-8"
+    it.options.release = 21
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+    withSourcesJar()
+}
+
+jar {
+    from("LICENSE") {
+        rename { "${it}_${project.archivesBaseName}"}
+    }
+} 
