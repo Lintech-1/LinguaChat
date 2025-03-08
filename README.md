@@ -124,7 +124,7 @@ Player2: hello
 
 ### Log Checking
 
-Check logs for messages:
+Check the logs for messages (provided `“debugMode”: true` is enabled in the `linguachat.json` configuration file):
 - `!!! MIXIN ChatHudMixin LOADED !!!` - confirms that the mixin is loaded
 - `Converting language for DeepL` - tracks language code conversion
 - `DeepL translation: ... -> ...` - confirms successful translation via DeepL
