@@ -3,7 +3,7 @@
   "id": "linguachat",
   "version": "${version}",
   "name": "LinguaChat",
-  "description": "Автоматический перевод сообщений чата между игроками с использованием сервисов Google Translate и DeepL",
+  "description": "Automatic translation of chat messages between players using Google Translate and DeepL.",
   "authors": [
     "Lintech"
   ],
