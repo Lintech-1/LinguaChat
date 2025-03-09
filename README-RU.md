@@ -7,7 +7,7 @@
 > [!NOTE]
 > LinguaChat сделает ваше общение в Minecraft доступным на любом языке, автоматически переводя сообщения в чате без прерывания игрового процесса!
 
-[![Скачать на CurseForge](https://img.shields.io/curseforge/dt/1215804?label=Download%20on%20CurseForge&logo=curseforge)](https://www.curseforge.com/minecraft/mc-mods/linguachat)
+[![Скачать на CurseForge](https://img.shields.io/curseforge/dt/1215804?label=Скачать%20на%20CurseForge&logo=curseforge)](https://www.curseforge.com/minecraft/mc-mods/linguachat)
 
 
 ## 🌟 Возможности
