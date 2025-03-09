@@ -1,9 +1,14 @@
+<img alt="Icon" width=100 src="https://raw.githubusercontent.com/Lintech-1/LinguaChat/refs/heads/main/src/main/resources/assets/linguachat/linguachat.png">
+
 # LinguaChat
 
 Мод майнкрафт для автоматического перевода сообщений в чате между игроками с использованием Google Translate и DeepL.
 
 > [!NOTE]
 > LinguaChat сделает ваше общение в Minecraft доступным на любом языке, автоматически переводя сообщения в чате без прерывания игрового процесса!
+
+[![Скачать на CurseForge](https://img.shields.io/curseforge/dt/1215804?label=Download%20on%20CurseForge&logo=curseforge)](https://www.curseforge.com/minecraft/mc-mods/linguachat)
+
 
 ## 🌟 Возможности
 
