@@ -16,6 +16,7 @@ repositories {
     maven { url 'https://maven.quiltmc.org/repository/release' }
     maven { url 'https://maven.quiltmc.org/repository/snapshot' }
     maven { url 'https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/' }
+    maven { url 'https://modmaven.dev/' }
     maven { url 'https://maven.terraformersmc.com/releases/' }
     mavenCentral()
 }
