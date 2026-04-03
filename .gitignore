@@ -1,0 +1,5 @@
+.gradle
+.vscode
+bin
+build
+versions

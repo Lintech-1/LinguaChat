@@ -1,0 +1,37 @@
+plugins {
+    id "dev.kikugie.stonecutter"
+}
+stonecutter.active "1.21.11"
+
+// Custom task to switch active version
+rootProject.tasks.register("switchVersion") {
+    group = 'stonecutter'
+    description = 'Switch active Minecraft version for IDE development'
+    doLast {
+        def targetVersion = project.findProperty('targetVersion')
+        if (targetVersion == null) {
+            println "Usage: ./gradlew switchVersion -PtargetVersion=1.19.2"
+            println "Available versions: 1.16.5, 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.4, 1.21.5, 1.21.11"
+            return
+        }
+        
+        def validVersions = ["1.16.5", "1.18.2", "1.19.2", "1.20.1", "1.21.1", "1.21.4", "1.21.5", "1.21.11"]
+        if (!validVersions.contains(targetVersion)) {
+            println "❌ Error: Version ${targetVersion} is not supported"
+            println "Available versions: ${validVersions.join(', ')}"
+            throw new GradleException("Invalid target version: ${targetVersion}")
+        }
+        
+        println "🔄 Switching active version to ${targetVersion}..."
+        
+        // Update stonecutter.gradle file
+        def stonecutterFile = rootProject.file('stonecutter.gradle')
+        def content = stonecutterFile.text
+        def newContent = content.replaceAll(/stonecutter\.active\s+"[^"]+"/, "stonecutter.active \"${targetVersion}\"")
+        stonecutterFile.text = newContent
+        
+        println "✅ Updated stonecutter.gradle to version ${targetVersion}"
+        println "📝 Run './gradlew --refresh-dependencies' to refresh IDE configuration"
+        println "💡 Or restart your IDE to apply changes"
+    }
+}

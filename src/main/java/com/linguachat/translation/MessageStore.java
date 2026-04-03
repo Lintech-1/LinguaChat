@@ -7,86 +7,82 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.linguachat.LinguaChatMod;
 
 /**
- * Класс для хранения и получения оригинальных текстов сообщений
- * Используется для отображения оригинального текста при наведении на переведенное сообщение
+ * Class for storing and retrieving original message texts
+ * Used to display original text when hovering over translated message
  */
 public class MessageStore {
-    // Статическая карта для хранения оригинальных текстов сообщений
     private static final Map<String, String> originalMessages = new ConcurrentHashMap<>();
     
-    // Кэш для отслеживания недавно обработанных сообщений с временными метками
+    // Cache for tracking recently processed messages with timestamps
     private static final Map<String, Long> recentlyProcessedMessages = new ConcurrentHashMap<>();
     
-    // Карта для отслеживания связанных сообщений (оригинал -> перевод и перевод -> оригинал)
+    // Map for tracking related messages (original -> translation and translation -> original)
     private static final Map<String, String> relatedMessages = new ConcurrentHashMap<>();
     
-    // Время жизни записи в кэше недавно обработанных сообщений (в миллисекундах)
-    private static final long CACHE_EXPIRY_TIME_MS = 5000; // 5 секунд
+    // Entry lifetime in recently processed messages cache (in milliseconds)
+    private static final long CACHE_EXPIRY_TIME_MS = 5000; // 5 seconds
     
     /**
-     * Сохраняет оригинальный текст сообщения
-     * @param key ключ для сообщения (обычно формата "имя_игрока:текст_сообщения")
-     * @param originalMessage оригинальный текст сообщения
+     * Stores original message text
+     * @param key message key (usually in format "player_name:message_text")
+     * @param originalMessage original message text
      */
     public static void storeOriginalMessage(String key, String originalMessage) {
         originalMessages.put(key, originalMessage);
         
-        // Логируем для отладки
-        LinguaChatMod.LOGGER.info("MessageStore: сохранено [" + key + " -> " + originalMessage + "]");
+        LinguaChatMod.LOGGER.info("MessageStore: stored [" + key + " -> " + originalMessage + "]");
     }
     
     /**
-     * Получает оригинальный текст сообщения по ключу
-     * @param key ключ сообщения
-     * @return оригинальный текст или null, если не найден
+     * Gets original message text by key
+     * @param key message key
+     * @return original text or null if not found
      */
     public static String getOriginalMessage(String key) {
         return originalMessages.get(key);
     }
     
     /**
-     * Очищает все хранилища сообщений
+     * Clears all message stores
      */
     public static void clear() {
-        LinguaChatMod.LOGGER.info("MessageStore: очистка всех хранилищ сообщений");
+        LinguaChatMod.LOGGER.info("MessageStore: clearing all message stores");
         originalMessages.clear();
         recentlyProcessedMessages.clear();
         relatedMessages.clear();
     }
     
     /**
-     * Создает ключ для сообщения
-     * @param playerName имя игрока
-     * @param messageText текст сообщения
-     * @return сформированный ключ
+     * Creates message key
+     * @param playerName player name
+     * @param messageText message text
+     * @return formatted key
      */
     public static String createMessageKey(String playerName, String messageText) {
         return playerName + ":" + messageText;
     }
     
     /**
-     * Связывает оригинальное сообщение с переведенным
-     * @param playerName имя игрока
-     * @param originalText оригинальный текст
-     * @param translatedText переведенный текст
+     * Links original message with translated one
+     * @param playerName player name
+     * @param originalText original text
+     * @param translatedText translated text
      */
     public static void linkMessages(String playerName, String originalText, String translatedText) {
         String originalKey = createMessageKey(playerName, originalText);
         String translatedKey = createMessageKey(playerName, translatedText);
         
-        // Сохраняем двунаправленную связь
         relatedMessages.put(originalKey, translatedKey);
         relatedMessages.put(translatedKey, originalKey);
         
-        // Также сохраняем исходные сообщения
         storeOriginalMessage(translatedKey, originalText);
     }
     
     /**
-     * Проверяет, связано ли сообщение с другим
-     * @param playerName имя игрока
-     * @param messageText текст сообщения
-     * @return true, если сообщение связано с другим
+     * Checks if message is linked to another
+     * @param playerName player name
+     * @param messageText message text
+     * @return true if message is linked to another
      */
     public static boolean isLinkedMessage(String playerName, String messageText) {
         String key = createMessageKey(playerName, messageText);
@@ -94,23 +90,23 @@ public class MessageStore {
     }
     
     /**
-     * Помечает сообщение как недавно обработанное
-     * @param playerName имя игрока
-     * @param messageText текст сообщения
+     * Marks message as recently processed
+     * @param playerName player name
+     * @param messageText message text
      */
     public static void markMessageAsProcessed(String playerName, String messageText) {
         String key = createMessageKey(playerName, messageText);
         recentlyProcessedMessages.put(key, System.currentTimeMillis());
         
-        // Очистка устаревших записей (можно вызывать периодически для экономии памяти)
+        // Clean expired entries (can be called periodically to save memory)
         cleanExpiredEntries();
     }
     
     /**
-     * Проверяет, было ли сообщение недавно обработано
-     * @param playerName имя игрока
-     * @param messageText текст сообщения
-     * @return true, если сообщение было недавно обработано
+     * Checks if message was recently processed
+     * @param playerName player name
+     * @param messageText message text
+     * @return true if message was recently processed
      */
     public static boolean wasMessageRecentlyProcessed(String playerName, String messageText) {
         String key = createMessageKey(playerName, messageText);
@@ -120,11 +116,9 @@ public class MessageStore {
             return false;
         }
         
-        // Проверяем, не истек ли срок жизни записи
         long currentTime = System.currentTimeMillis();
         boolean isRecent = (currentTime - timestamp) <= CACHE_EXPIRY_TIME_MS;
         
-        // Если срок истек, удаляем запись
         if (!isRecent) {
             recentlyProcessedMessages.remove(key);
         }
@@ -133,12 +127,12 @@ public class MessageStore {
     }
     
     /**
-     * Очищает устаревшие записи из кэша недавно обработанных сообщений
+     * Cleans expired entries from recently processed messages cache
      */
     private static void cleanExpiredEntries() {
         long currentTime = System.currentTimeMillis();
         
-        // Используем копию ключей для безопасного удаления во время итерации
+        // Use copy of keys for safe removal during iteration
         Set<String> keys = recentlyProcessedMessages.keySet();
         keys.forEach(key -> {
             Long timestamp = recentlyProcessedMessages.get(key);

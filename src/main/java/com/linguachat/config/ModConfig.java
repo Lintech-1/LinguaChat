@@ -15,10 +15,9 @@ public class ModConfig {
     static {
         Path configDir = FabricLoader.getInstance().getConfigDir();
         CONFIG_PATH = configDir.resolve("linguachat.json");
-        LinguaChatMod.LOGGER.info("Configuration file will be at: " + CONFIG_PATH.toAbsolutePath());
+        LinguaChatMod.LOGGER.info(com.linguachat.compat.I18nCompat.translate("linguachat.log.config_path", CONFIG_PATH.toAbsolutePath()));
     }
 
-    // Основные настройки
     private boolean enabled = true;
     private boolean translateIncoming = true;
     private boolean translateOutgoing = true;
@@ -26,8 +25,9 @@ public class ModConfig {
     private String defaultTargetLang = "en";
     private String preferredTranslator = "google";
     private String deeplApiKey = "";
+    private String kagiApiKey = "";
+    private String kagiSessionToken = "";
     
-    // Дополнительные настройки
     private boolean showOriginalOnHover = true;
     private boolean showTranslatedText = true;
     private boolean asyncTranslation = true;
@@ -37,6 +37,12 @@ public class ModConfig {
     public static void init() {
         if (INSTANCE == null) {
             load();
+            ConfigValidator.ValidationResult result = ConfigValidator.validate(INSTANCE);
+            ConfigValidator.logValidationResults(result);
+            
+            if (result.isConfigModified()) {
+                save();
+            }
         }
     }
 
@@ -50,17 +56,17 @@ public class ModConfig {
     private static void load() {
         try {
             if (CONFIG_PATH.toFile().exists()) {
-                try (Reader reader = new FileReader(CONFIG_PATH.toFile())) {
+                try (Reader reader = new InputStreamReader(new FileInputStream(CONFIG_PATH.toFile()), "UTF-8")) {
                     INSTANCE = GSON.fromJson(reader, ModConfig.class);
-                    LinguaChatMod.LOGGER.info("Configuration loaded from: " + CONFIG_PATH.toAbsolutePath());
+                    LinguaChatMod.LOGGER.info(com.linguachat.compat.I18nCompat.translate("linguachat.log.config_loaded", CONFIG_PATH.toAbsolutePath()));
                 }
             } else {
                 INSTANCE = new ModConfig();
                 save();
-                LinguaChatMod.LOGGER.info("Created new configuration at: " + CONFIG_PATH.toAbsolutePath());
+                LinguaChatMod.LOGGER.info(com.linguachat.compat.I18nCompat.translate("linguachat.log.config_created", CONFIG_PATH.toAbsolutePath()));
             }
         } catch (IOException e) {
-            LinguaChatMod.LOGGER.error("Failed to load configuration: " + e.getMessage());
+            LinguaChatMod.LOGGER.error(com.linguachat.compat.I18nCompat.translate("linguachat.log.config_load_error", e.getMessage()));
             INSTANCE = new ModConfig();
             save();
         }
@@ -69,17 +75,17 @@ public class ModConfig {
     public static void save() {
         try {
             CONFIG_PATH.toFile().getParentFile().mkdirs();
-            try (Writer writer = new FileWriter(CONFIG_PATH.toFile())) {
+            try (Writer writer = new OutputStreamWriter(new FileOutputStream(CONFIG_PATH.toFile()), "UTF-8")) {
                 GSON.toJson(INSTANCE, writer);
-                LinguaChatMod.LOGGER.info("Configuration saved to: " + CONFIG_PATH.toAbsolutePath());
+                LinguaChatMod.LOGGER.info(com.linguachat.compat.I18nCompat.translate("linguachat.log.config_saved", CONFIG_PATH.toAbsolutePath()));
             }
         } catch (IOException e) {
-            LinguaChatMod.LOGGER.error("Failed to save configuration: " + e.getMessage());
+            LinguaChatMod.LOGGER.error(com.linguachat.compat.I18nCompat.translate("linguachat.log.config_save_error", e.getMessage()));
             e.printStackTrace();
         }
     }
 
-    // Getters and setters
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -140,6 +146,24 @@ public class ModConfig {
 
     public void setDeeplApiKey(String deeplApiKey) {
         this.deeplApiKey = deeplApiKey;
+        save();
+    }
+
+    public String getKagiApiKey() {
+        return kagiApiKey;
+    }
+
+    public void setKagiApiKey(String kagiApiKey) {
+        this.kagiApiKey = kagiApiKey;
+        save();
+    }
+
+    public String getKagiSessionToken() {
+        return kagiSessionToken;
+    }
+
+    public void setKagiSessionToken(String kagiSessionToken) {
+        this.kagiSessionToken = kagiSessionToken;
         save();
     }
 

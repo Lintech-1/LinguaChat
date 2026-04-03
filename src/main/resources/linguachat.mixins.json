@@ -2,12 +2,11 @@
   "required": true,
   "minVersion": "0.8",
   "package": "com.linguachat.mixin",
-  "compatibilityLevel": "JAVA_17",
+  "compatibilityLevel": "${mixin_java_level}",
   "client": [
     "client.ChatScreenMixin",
     "client.ChatHudMixin",
-    "client.ClientPlayNetworkHandlerMixin",
-    "client.MessageHandlerMixin"
+    "client.ClientPlayNetworkHandlerMixin"${message_handler_mixin}
   ],
   "injectors": {
     "defaultRequire": 1

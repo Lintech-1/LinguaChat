@@ -1,14 +1,7 @@
 package com.linguachat.translation;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,170 +9,53 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.io.Closeable;
+//? if >=1.18 {
+import java.net.http.HttpClient;
+import java.time.Duration;
+//?}
 
 import com.linguachat.LinguaChatMod;
+import com.linguachat.compat.I18nCompat;
+import com.linguachat.compat.TextCompat;
 import com.linguachat.config.ModConfig;
-import com.deepl.api.TextResult;
-import com.deepl.api.Translator;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
+import com.linguachat.translation.providers.*;
 
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.text.MutableText;
 import net.minecraft.client.MinecraftClient;
 
 public class TranslationManager implements Closeable {
-    private static final String GOOGLE_TRANSLATE_URL = "https://translate.googleapis.com/translate_a/single?client=gtx&dt=t";
+    //? if >=1.18 {
     private final HttpClient httpClient;
-    private Translator deeplTranslator;
+    //?}
     private ExecutorService translationExecutor;
     private final Map<String, CompletableFuture<String>> activeTranslations = new ConcurrentHashMap<>();
     
-    // Алиасы для языков DeepL
-    private static final Map<String, String> DEEPL_LANGUAGE_ALIASES = new HashMap<>();
-    static {
-        // Английский язык
-        DEEPL_LANGUAGE_ALIASES.put("en", "en-US"); // Английский (американский)
-        DEEPL_LANGUAGE_ALIASES.put("english", "en-US");
-        DEEPL_LANGUAGE_ALIASES.put("en-GB", "en-GB"); // Английский (британский)
-        DEEPL_LANGUAGE_ALIASES.put("en-US", "en-US"); // Явный алиас
-        DEEPL_LANGUAGE_ALIASES.put("en_US", "en-US"); // Подчеркивание вместо дефиса
-        DEEPL_LANGUAGE_ALIASES.put("en_GB", "en-GB");
-        
-        // Русский язык
-        DEEPL_LANGUAGE_ALIASES.put("ru", "ru");
-        DEEPL_LANGUAGE_ALIASES.put("russian", "ru");
-        
-        // Португальский
-        DEEPL_LANGUAGE_ALIASES.put("pt", "pt-PT"); // Португальский (Португалия)
-        DEEPL_LANGUAGE_ALIASES.put("portuguese", "pt-PT");
-        DEEPL_LANGUAGE_ALIASES.put("pt-BR", "pt-BR"); // Португальский (Бразилия)
-        DEEPL_LANGUAGE_ALIASES.put("pt_BR", "pt-BR");
-        DEEPL_LANGUAGE_ALIASES.put("pt_PT", "pt-PT");
-        
-        // Немецкий
-        DEEPL_LANGUAGE_ALIASES.put("de", "de");
-        DEEPL_LANGUAGE_ALIASES.put("german", "de");
-        
-        // Французский
-        DEEPL_LANGUAGE_ALIASES.put("fr", "fr");
-        DEEPL_LANGUAGE_ALIASES.put("french", "fr");
-        
-        // Испанский
-        DEEPL_LANGUAGE_ALIASES.put("es", "es");
-        DEEPL_LANGUAGE_ALIASES.put("spanish", "es");
-        
-        // Итальянский
-        DEEPL_LANGUAGE_ALIASES.put("it", "it");
-        DEEPL_LANGUAGE_ALIASES.put("italian", "it");
-        
-        // Японский
-        DEEPL_LANGUAGE_ALIASES.put("ja", "ja");
-        DEEPL_LANGUAGE_ALIASES.put("japanese", "ja");
-        
-        // Китайский
-        DEEPL_LANGUAGE_ALIASES.put("zh", "zh");
-        DEEPL_LANGUAGE_ALIASES.put("chinese", "zh");
-        
-        // Новые языки
-        
-        // Болгарский
-        DEEPL_LANGUAGE_ALIASES.put("bg", "bg");
-        DEEPL_LANGUAGE_ALIASES.put("bulgarian", "bg");
-        
-        // Чешский
-        DEEPL_LANGUAGE_ALIASES.put("cs", "cs");
-        DEEPL_LANGUAGE_ALIASES.put("czech", "cs");
-        
-        // Датский
-        DEEPL_LANGUAGE_ALIASES.put("da", "da");
-        DEEPL_LANGUAGE_ALIASES.put("danish", "da");
-        
-        // Греческий
-        DEEPL_LANGUAGE_ALIASES.put("el", "el");
-        DEEPL_LANGUAGE_ALIASES.put("greek", "el");
-        
-        // Эстонский
-        DEEPL_LANGUAGE_ALIASES.put("et", "et");
-        DEEPL_LANGUAGE_ALIASES.put("estonian", "et");
-        
-        // Финский
-        DEEPL_LANGUAGE_ALIASES.put("fi", "fi");
-        DEEPL_LANGUAGE_ALIASES.put("finnish", "fi");
-        
-        // Венгерский
-        DEEPL_LANGUAGE_ALIASES.put("hu", "hu");
-        DEEPL_LANGUAGE_ALIASES.put("hungarian", "hu");
-        
-        // Индонезийский
-        DEEPL_LANGUAGE_ALIASES.put("id", "id");
-        DEEPL_LANGUAGE_ALIASES.put("indonesian", "id");
-        
-        // Корейский
-        DEEPL_LANGUAGE_ALIASES.put("ko", "ko");
-        DEEPL_LANGUAGE_ALIASES.put("korean", "ko");
-        
-        // Литовский
-        DEEPL_LANGUAGE_ALIASES.put("lt", "lt");
-        DEEPL_LANGUAGE_ALIASES.put("lithuanian", "lt");
-        
-        // Латышский
-        DEEPL_LANGUAGE_ALIASES.put("lv", "lv");
-        DEEPL_LANGUAGE_ALIASES.put("latvian", "lv");
-        
-        // Норвежский
-        DEEPL_LANGUAGE_ALIASES.put("nb", "nb");
-        DEEPL_LANGUAGE_ALIASES.put("norwegian", "nb");
-        
-        // Нидерландский
-        DEEPL_LANGUAGE_ALIASES.put("nl", "nl");
-        DEEPL_LANGUAGE_ALIASES.put("dutch", "nl");
-        
-        // Польский
-        DEEPL_LANGUAGE_ALIASES.put("pl", "pl");
-        DEEPL_LANGUAGE_ALIASES.put("polish", "pl");
-        
-        // Румынский
-        DEEPL_LANGUAGE_ALIASES.put("ro", "ro");
-        DEEPL_LANGUAGE_ALIASES.put("romanian", "ro");
-        
-        // Словацкий
-        DEEPL_LANGUAGE_ALIASES.put("sk", "sk");
-        DEEPL_LANGUAGE_ALIASES.put("slovak", "sk");
-        
-        // Словенский
-        DEEPL_LANGUAGE_ALIASES.put("sl", "sl");
-        DEEPL_LANGUAGE_ALIASES.put("slovenian", "sl");
-        
-        // Шведский
-        DEEPL_LANGUAGE_ALIASES.put("sv", "sv");
-        DEEPL_LANGUAGE_ALIASES.put("swedish", "sv");
-        
-        // Турецкий
-        DEEPL_LANGUAGE_ALIASES.put("tr", "tr");
-        DEEPL_LANGUAGE_ALIASES.put("turkish", "tr");
-        
-        // Украинский
-        DEEPL_LANGUAGE_ALIASES.put("uk", "uk");
-        DEEPL_LANGUAGE_ALIASES.put("ukrainian", "uk");
-        
-        // Особый случай - автоопределение
-        DEEPL_LANGUAGE_ALIASES.put("auto", "auto");
-    }
+    // provider instances - Google always available, others need API keys
+    private final GoogleTranslateClient googleClient;
+    private final DeepLTranslateClient deeplClient;
+    private final KagiTranslateClient kagiClient;
 
     public TranslationManager() {
+        //? if >=1.18 {
         this.httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
             
-        // Инициализируем DeepL только если есть API ключ
-        String apiKey = ModConfig.get().getDeeplApiKey();
-        if (apiKey != null && !apiKey.isEmpty()) {
-            this.deeplTranslator = new Translator(apiKey);
-        }
+        // Java 11+ uses HttpClient, providers share it
+        this.googleClient = new GoogleTranslateClient(httpClient);
+        this.deeplClient = new DeepLTranslateClient();
+        this.kagiClient = new KagiTranslateClient(httpClient);
+        //?} else {
+        /*// Java 8: providers don't require HttpClient
+        this.googleClient = new GoogleTranslateClient(null);
+        this.deeplClient = new DeepLTranslateClient();
+        this.kagiClient = new KagiTranslateClient(null);
+        *///?}
         
-        // Создаем выделенный пул потоков для переводов
+        // 2 threads for async translation - keeps UI responsive
         initializeExecutor();
     }
 
@@ -193,56 +69,129 @@ public class TranslationManager implements Closeable {
     
     public void ensureExecutorRunning() {
         if (translationExecutor == null || translationExecutor.isShutdown() || translationExecutor.isTerminated()) {
-            LinguaChatMod.LOGGER.info("Переинициализация пула потоков для перевода");
+            LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.reinit_thread_pool"));
             initializeExecutor();
         }
     }
 
-    public String resolveDeepLLanguage(String lang) {
-        if (lang == null || lang.isEmpty()) return "auto"; // Безопасное значение по умолчанию
+    /**
+     * Builds provider chain based on settings
+     */
+    private List<TranslationProvider> buildProviderChain() {
+        List<TranslationProvider> chain = new ArrayList<>();
+        String preferred = ModConfig.get().getPreferredTranslator().toLowerCase();
         
-        // Нижний регистр для поиска
-        String lowerLang = lang.toLowerCase().trim();
+        // user's preferred provider gets first shot at translation
+        TranslationProvider preferredProvider;
+        if ("kagi".equals(preferred)) {
+            preferredProvider = kagiClient;
+        } else if ("deepl".equals(preferred)) {
+            preferredProvider = deeplClient;
+        } else {
+            preferredProvider = googleClient;
+        }
         
-        // Логируем для отладки
-        LinguaChatMod.LOGGER.info("Преобразование языка для DeepL: '" + lowerLang + "'");
+        if (preferredProvider.isAvailable()) {
+            chain.add(preferredProvider);
+        }
         
-        // Проверяем карту алиасов
-        String resolvedLang = DEEPL_LANGUAGE_ALIASES.getOrDefault(lowerLang, null);
+        // chain other providers for fallback if preferred fails
+        if (preferredProvider != kagiClient && kagiClient.isAvailable()) {
+            chain.add(kagiClient);
+        }
+        if (preferredProvider != deeplClient && deeplClient.isAvailable()) {
+            chain.add(deeplClient);
+        }
+        if (preferredProvider != googleClient) {
+            chain.add(googleClient); // Google is always available as last fallback
+        }
         
-        if (resolvedLang == null) {
-            // Если используется паттерн с подчеркиванием (xx_XX), преобразуем в формат с дефисом (xx-XX)
-            if (lowerLang.contains("_")) {
-                String withHyphen = lowerLang.replace('_', '-');
-                resolvedLang = DEEPL_LANGUAGE_ALIASES.getOrDefault(withHyphen, null);
+        return chain;
+    }
+
+    /**
+     * Attempts to translate text using provider chain with fallback
+     */
+    private String translateWithFallback(String text, String sourceLang, String targetLang) {
+        List<TranslationProvider> providers = buildProviderChain();
+        
+        String translatedResult = null;
+        for (int i = 0; i < providers.size(); i++) {
+            TranslationProvider provider = providers.get(i);
+            try {
+                translatedResult = provider.translate(text, sourceLang, targetLang);
                 
-                // Если все еще не нашли, попробуем использовать только основную часть (xx)
-                if (resolvedLang == null) {
-                    String mainPart = lowerLang.split("_")[0];
-                    resolvedLang = DEEPL_LANGUAGE_ALIASES.getOrDefault(mainPart, null);
+                // workaround: if auto-detect returns same text (wrong lang guess), retry with English
+                if ("auto".equals(sourceLang) && 
+                    translatedResult.equals(text) && 
+                    !"en".equals(targetLang) && 
+                    text.trim().length() > 0) {
+                    
+                        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.language_match_detected", targetLang));
+                        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.retry_english"));
+                        
+                        try {
+                            String englishTranslation = provider.translate(text, sourceLang, "en");
+                            
+                            // make sure English fallback actually translated something
+                            if (!englishTranslation.equals(text) && !englishTranslation.equals(translatedResult)) {
+                                LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.fallback_english_success", text, englishTranslation));
+                                return englishTranslation;
+                            } else {
+                                LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.english_no_change"));
+                            }
+                        } catch (TranslationException retryException) {
+                            LinguaChatMod.LOGGER.warn(I18nCompat.translate("linguachat.log.retry_english_error", retryException.getMessage()));
+                        }
                 }
-            }
-            
-            // Если все еще не нашли, попробуем использовать только основную часть кода с дефисом (xx-XX -> xx)
-            if (resolvedLang == null && lowerLang.contains("-")) {
-                String mainPart = lowerLang.split("-")[0];
-                resolvedLang = DEEPL_LANGUAGE_ALIASES.getOrDefault(mainPart, null);
-            }
-            
-            // Если все методы не сработали, возвращаем оригинальный код или "en-US" для безопасности
-            if (resolvedLang == null) {
-                // Если это выглядит как валидный код языка (2 или 5 символов), используем его
-                if (lowerLang.length() == 2 || 
-                    (lowerLang.length() == 5 && (lowerLang.charAt(2) == '-' || lowerLang.charAt(2) == '_'))) {
-                    resolvedLang = lowerLang.replace('_', '-');
-                } else {
-                    resolvedLang = "en-US"; // Безопасное значение по умолчанию
+                
+                return translatedResult;
+            } catch (TranslationException e) {
+                TranslationLogger.logProviderError(
+                    provider.getProviderName(),
+                    e.getErrorType().name(),
+                    e.getMessage()
+                );
+                
+                // provider failed, try next in chain
+                if (i < providers.size() - 1) {
+                    TranslationProvider nextProvider = providers.get(i + 1);
+                    TranslationLogger.logFallback(
+                        provider.getProviderName(),
+                        nextProvider.getProviderName(),
+                        e.getMessage()
+                    );
                 }
             }
         }
         
-        LinguaChatMod.LOGGER.info("Преобразован язык для DeepL: '" + lowerLang + "' -> '" + resolvedLang + "'");
-        return resolvedLang;
+        // If all providers failed, return original text
+        LinguaChatMod.LOGGER.warn(I18nCompat.translate("linguachat.log.all_providers_failed"));
+        return text;
+    }
+
+    public String normalizeLanguageCode(String lang) {
+        if (lang == null || lang.isEmpty()) return "auto";
+        
+        String normalized = lang.toLowerCase().trim();
+        
+        // Map common incorrect codes to correct ISO 639-1 codes
+        switch (normalized) {
+            case "cz": return "cs";  // Czech
+            case "jp": return "ja";  // Japanese
+            case "kr": return "ko";  // Korean
+            case "gr": return "el";  // Greek
+            case "ua": return "uk";  // Ukrainian
+            case "cn": return "zh";  // Chinese (Simplified)
+            case "tw": return "zh-TW";  // Chinese (Traditional)
+            default: return normalized;
+        }
+    }
+
+    // Deprecated method for backward compatibility
+    @Deprecated
+    public String resolveDeepLLanguage(String lang) {
+        return normalizeLanguageCode(lang);
     }
 
     public Text translate(Text text, TranslationDirection direction) {
@@ -250,7 +199,7 @@ public class TranslationManager implements Closeable {
             return text;
         }
         
-        // Проверяем кэш
+        // cache hit = instant return, no API call
         Text cachedTranslation = TranslationCache.get(text, direction);
         if (cachedTranslation != null) {
             return cachedTranslation;
@@ -265,37 +214,17 @@ public class TranslationManager implements Closeable {
             String sourceLang = direction.getSourceLang();
             String targetLang = direction.getTargetLang();
             
-            // Выбираем сервис перевода
-            String translatedContent;
-            String preferredTranslator = ModConfig.get().getPreferredTranslator();
+            // try providers in order until one succeeds
+            String translatedContent = translateWithFallback(content, sourceLang, targetLang);
             
-            if ("deepl".equalsIgnoreCase(preferredTranslator) && deeplTranslator != null) {
-                // Используем DeepL
-                try {
-                    // Заменяем "auto" на null для автоопределения языка
-                    String deeplSourceLang = "auto".equals(sourceLang) ? null : sourceLang;
-                    TextResult result = deeplTranslator.translateText(content, deeplSourceLang, targetLang);
-                    translatedContent = result.getText();
-                    LinguaChatMod.LOGGER.info("DeepL перевод: " + content + " -> " + translatedContent);
-                } catch (Exception e) {
-                    LinguaChatMod.LOGGER.error("Ошибка при использовании DeepL API: " + e.getMessage());
-                    // Запасной вариант - Google Translate
-                    translatedContent = translateWithGoogle(content, sourceLang, targetLang);
-                }
-            } else {
-                // Используем Google Translate
-                translatedContent = translateWithGoogle(content, sourceLang, targetLang);
-            }
-            
-            // Создаем новый текст с переводом
+            // wrap translated string in Text with hover effect
             Text translatedText = createTranslatedText(text, translatedContent);
             
-            // Сохраняем в кэш
             TranslationCache.put(text, translatedText, direction);
             
             return translatedText;
         } catch (Exception e) {
-            LinguaChatMod.LOGGER.error("Ошибка при переводе: " + e.getMessage());
+            LinguaChatMod.LOGGER.error(I18nCompat.translate("linguachat.log.translation_error", e.getMessage()));
             return text;
         }
     }
@@ -305,8 +234,8 @@ public class TranslationManager implements Closeable {
             callback.accept(text);
             return;
         }
-        
-        // Проверяем кэш
+
+        // cache hit = instant return, no API call
         Text cachedTranslation = TranslationCache.get(text, direction);
         if (cachedTranslation != null) {
             callback.accept(cachedTranslation);
@@ -319,12 +248,12 @@ public class TranslationManager implements Closeable {
             return;
         }
         
-        // Проверяем, не выполняется ли уже перевод этого текста
+        // dedupe: don't translate same message twice if already pending
         String cacheKey = content + "_" + direction.getSourceLang() + "_" + direction.getTargetLang();
         CompletableFuture<String> existingTranslation = activeTranslations.get(cacheKey);
         
         if (existingTranslation != null && !existingTranslation.isDone()) {
-            // Уже есть активный перевод, добавляем обработчик
+            // piggyback on existing translation task
             existingTranslation.thenAcceptAsync(translatedContent -> {
                 Text translatedText = createTranslatedText(text, translatedContent);
                 TranslationCache.put(text, translatedText, direction);
@@ -333,135 +262,61 @@ public class TranslationManager implements Closeable {
             return;
         }
         
-        // Создаем новую задачу перевода
         CompletableFuture<String> translationFuture = CompletableFuture.supplyAsync(() -> {
-            try {
-                String sourceLang = direction.getSourceLang();
-                String targetLang = direction.getTargetLang();
-                
-                // Выбираем сервис перевода
-                String translatedContent;
-                String preferredTranslator = ModConfig.get().getPreferredTranslator();
-                
-                if ("deepl".equalsIgnoreCase(preferredTranslator) && deeplTranslator != null) {
-                    // Используем DeepL
-                    try {
-                        // Заменяем "auto" на null для автоопределения языка
-                        String deeplSourceLang = "auto".equals(sourceLang) ? null : sourceLang;
-                        TextResult result = deeplTranslator.translateText(content, deeplSourceLang, targetLang);
-                        translatedContent = result.getText();
-                        LinguaChatMod.LOGGER.info("DeepL перевод: " + content + " -> " + translatedContent);
-                    } catch (Exception e) {
-                        LinguaChatMod.LOGGER.error("Ошибка при использовании DeepL API: " + e.getMessage());
-                        // Запасной вариант - Google Translate
-                        translatedContent = translateWithGoogle(content, sourceLang, targetLang);
-                    }
-                } else {
-                    // Используем Google Translate
-                    translatedContent = translateWithGoogle(content, sourceLang, targetLang);
-                }
-                
-                return translatedContent;
-            } catch (Exception e) {
-                LinguaChatMod.LOGGER.error("Ошибка при асинхронном переводе: " + e.getMessage());
-                throw new RuntimeException(e);
-            }
+            String sourceLang = direction.getSourceLang();
+            String targetLang = direction.getTargetLang();
+            
+            // try providers in order until one succeeds
+            return translateWithFallback(content, sourceLang, targetLang);
         }, translationExecutor);
         
-        // Сохраняем задачу в активные переводы
         activeTranslations.put(cacheKey, translationFuture);
         
-        // Добавляем обработчики
         translationFuture.thenAcceptAsync(translatedContent -> {
             Text translatedText = createTranslatedText(text, translatedContent);
             TranslationCache.put(text, translatedText, direction);
             callback.accept(translatedText);
-            // Удаляем из активных переводов
             activeTranslations.remove(cacheKey);
         }, MinecraftClient.getInstance()::execute)
         .exceptionally(e -> {
-            LinguaChatMod.LOGGER.error("Ошибка при обработке перевода: " + e.getMessage());
-            callback.accept(text); // В случае ошибки возвращаем оригинальный текст
+            LinguaChatMod.LOGGER.error(I18nCompat.translate("linguachat.log.translation_processing_error", e.getMessage()));
+            callback.accept(text);
             activeTranslations.remove(cacheKey);
             return null;
         });
     }
     
     private Text createTranslatedText(Text original, String translatedContent) {
-        // Создаем новый текст с переводом, сохраняя стиль оригинала
-        Text translatedText = Text.literal(translatedContent).setStyle(original.getStyle());
+        MutableText translatedText = TextCompat.literal(translatedContent);
         
-        // Если включена опция показа оригинала при наведении, добавляем hover-эффект
+        // hover shows original if user enabled it in config
         if (ModConfig.get().isShowOriginalOnHover()) {
             String originalContent = original.getString();
             
-            // Добавляем hover-эффект только если перевод отличается от оригинала
+            // no point showing hover if text didn't change
             if (!originalContent.equals(translatedContent)) {
-                Style newStyle = translatedText.getStyle().withHoverEvent(
-                    new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Оригинал: " + originalContent))
+                // compat layer handles hover across MC versions
+                HoverEvent hoverEvent = TextCompat.createShowTextHoverEvent(
+                    TextCompat.literal(I18nCompat.translate("linguachat.hover.original", originalContent))
                 );
-                translatedText = translatedText.copy().setStyle(newStyle);
+                
+                return translatedText.styled(style -> style.withHoverEvent(hoverEvent));
             }
         }
         
-        return translatedText;
+        // keep original formatting (colors, bold, etc)
+        return translatedText.setStyle(original.getStyle());
     }
     
     public Text translateChat(Text message, String playerName, TranslationDirection direction) {
-        // Специальная обработка для сообщений чата
-        // Можно добавить дополнительную логику, например, сохранение оригинала в MessageStore
+        // chat messages get stored for hover effect later
         Text translatedText = translate(message, direction);
         
-        // Сохраняем связь между оригинальным и переведенным сообщениями
         if (!message.getString().equals(translatedText.getString())) {
             MessageStore.linkMessages(playerName, message.getString(), translatedText.getString());
         }
         
         return translatedText;
-    }
-    
-    private String translateWithGoogle(String text, String sourceLang, String targetLang) throws IOException, InterruptedException {
-        // Если sourceLang = "auto", Google автоматически определит язык
-        String sourceParam = "auto".equals(sourceLang) ? "auto" : sourceLang;
-        
-        // Формируем URL запроса
-        String url = GOOGLE_TRANSLATE_URL + 
-                     "&sl=" + URLEncoder.encode(sourceParam, StandardCharsets.UTF_8) + 
-                     "&tl=" + URLEncoder.encode(targetLang, StandardCharsets.UTF_8) + 
-                     "&q=" + URLEncoder.encode(text, StandardCharsets.UTF_8);
-        
-        // Отправляем запрос
-        HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .timeout(Duration.ofSeconds(10))
-            .GET()
-            .build();
-        
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        
-        if (response.statusCode() != 200) {
-            throw new IOException("Ошибка при запросе к Google Translate API: " + response.statusCode());
-        }
-        
-        // Парсим JSON ответ
-        try {
-            // Ответ имеет формат [[["переведенный текст","исходный текст",null,null,1]],null,"en"]
-            String responseBody = response.body();
-            var jsonArray = JsonParser.parseString(responseBody).getAsJsonArray();
-            
-            // Извлекаем переведенный текст
-            StringBuilder translatedText = new StringBuilder();
-            var translationArray = jsonArray.get(0).getAsJsonArray();
-            
-            for (int i = 0; i < translationArray.size(); i++) {
-                translatedText.append(translationArray.get(i).getAsJsonArray().get(0).getAsString());
-            }
-            
-            LinguaChatMod.LOGGER.info("Google перевод: " + text + " -> " + translatedText);
-            return translatedText.toString();
-        } catch (JsonParseException e) {
-            throw new IOException("Ошибка при парсинге ответа от Google Translate: " + e.getMessage());
-        }
     }
     
     @Override

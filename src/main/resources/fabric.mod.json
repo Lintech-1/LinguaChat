@@ -3,13 +3,14 @@
   "id": "linguachat",
   "version": "${version}",
   "name": "LinguaChat",
-  "description": "Automatic translation of chat messages between players using Google Translate and DeepL",
+  "description": "Automatic translation of chat messages between players using Google Translate, DeepL, and Kagi Translate",
   "authors": [
     "Lintech"
   ],
   "contact": {
     "homepage": "https://github.com/Lintech-1/LinguaChat",
-    "sources": "https://github.com/Lintech-1/LinguaChat"
+    "sources": "https://github.com/Lintech-1/LinguaChat",
+    "issues" : "https://github.com/Lintech-1/LinguaChat/issues"
   },
   "license": "MIT",
   "icon": "assets/linguachat/linguachat.png",
@@ -17,15 +18,21 @@
   "entrypoints": {
     "main": [
       "com.linguachat.LinguaChatMod"
+    ],
+    "client": [
+      "com.linguachat.LinguaChatClient"
+    ],
+    "modmenu": [
+      "com.linguachat.integration.ModMenuIntegration"
     ]
   },
   "mixins": [
     "linguachat.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.16.10",
-    "minecraft": "~1.21.4",
-    "java": ">=21",
-    "fabric-api": "*"
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "~${minecraft_version}",
+    "java": ">=${java_version}",
+    "${fabric_api_mod_id}": ">=${fabric_api_version}"
   }
 } 

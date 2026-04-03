@@ -6,20 +6,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Кэш для переведенных сообщений
+ * Cache for translated messages
  */
 public class TranslationCache {
-    private static final int MAX_CACHE_SIZE = 500;
+    private static final int MAX_CACHE_SIZE = 512;
     
-    // Используем обычную HashMap вместо LinkedHashMap с LRU
+    // Use regular HashMap instead of LinkedHashMap with LRU
     private static final Map<CacheKey, Text> cache = new HashMap<>(MAX_CACHE_SIZE);
     private static final Map<CacheKey, Long> accessTimes = new HashMap<>(MAX_CACHE_SIZE);
     
-    // Кэш с блокировкой для потокобезопасности
+    // Cache with locking for thread safety
     private static final Object cacheLock = new Object();
 
     /**
-     * Ключ для кэширования
+     * Key for caching
      */
     private static class CacheKey {
         private final String content;
@@ -52,14 +52,13 @@ public class TranslationCache {
     }
 
     /**
-     * Получить перевод из кэша
+     * Get translation from cache
      */
     public static Text get(Text text, TranslationDirection direction) {
         synchronized (cacheLock) {
             CacheKey key = new CacheKey(text, direction);
             Text result = cache.get(key);
             if (result != null) {
-                // Обновляем время доступа
                 accessTimes.put(key, System.currentTimeMillis());
             }
             return result;
@@ -67,13 +66,13 @@ public class TranslationCache {
     }
 
     /**
-     * Добавить перевод в кэш
+     * Add translation to cache
      */
     public static void put(Text original, Text translated, TranslationDirection direction) {
         synchronized (cacheLock) {
             CacheKey key = new CacheKey(original, direction);
             
-            // Если достигнут максимальный размер кэша, удаляем самый старый элемент
+            // If max cache size is reached, remove oldest entry
             if (cache.size() >= MAX_CACHE_SIZE && !cache.containsKey(key)) {
                 removeOldestEntry();
             }
@@ -84,7 +83,7 @@ public class TranslationCache {
     }
     
     /**
-     * Удаляет самую старую запись из кэша
+     * Removes oldest entry from cache
      */
     private static void removeOldestEntry() {
         if (accessTimes.isEmpty()) return;
@@ -106,7 +105,7 @@ public class TranslationCache {
     }
     
     /**
-     * Очистить кэш
+     * Clear cache
      */
     public static void clear() {
         synchronized (cacheLock) {
@@ -116,7 +115,7 @@ public class TranslationCache {
     }
     
     /**
-     * Получить текущий размер кэша
+     * Get current cache size
      */
     public static int size() {
         synchronized (cacheLock) {
