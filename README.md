@@ -139,7 +139,7 @@ Please include:
 
 ## 📚 For Developers
 
-Full developer documentation including Stonecutter multi-version development, compatibility layers, and public API is available in [`docs/en.md`](docs/en.md) (English) and [`docs/ru.md`](docs/ru.md) (Русский).
+Full developer documentation including Stonecutter multi-version development, compatibility layers, and public API is available in [`docs/EN.md`](docs/EN.md) (English) and [`docs/RU.md`](docs/RU.md) (Русский).
 
 ---
 

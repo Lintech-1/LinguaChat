@@ -139,7 +139,7 @@
 
 ## 📚 Для разработчиков
 
-Полная документация для разработчиков, включая информацию о мульти-версионной разработке с Stonecutter, compatibility layers и публичном API, доступна в [`docs/en.md`](docs/en.md) (English) и [`docs/ru.md`](docs/ru.md) (Русский).
+Полная документация для разработчиков, включая информацию о мульти-версионной разработке с Stonecutter, compatibility layers и публичном API, доступна в [`docs/EN.md`](docs/EN.md) (English) и [`docs/RU.md`](docs/RU.md) (Русский).
 
 ---
 
