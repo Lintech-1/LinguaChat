@@ -15,7 +15,7 @@ public class ModConfig {
     static {
         Path configDir = FabricLoader.getInstance().getConfigDir();
         CONFIG_PATH = configDir.resolve("linguachat.json");
-        LinguaChatMod.LOGGER.info(com.linguachat.compat.I18nCompat.translate("linguachat.log.config_path", CONFIG_PATH.toAbsolutePath()));
+        LinguaChatMod.LOGGER.info(logText("linguachat.log.config_path", CONFIG_PATH.toAbsolutePath()));
     }
 
     private boolean enabled = true;
@@ -58,15 +58,15 @@ public class ModConfig {
             if (CONFIG_PATH.toFile().exists()) {
                 try (Reader reader = new InputStreamReader(new FileInputStream(CONFIG_PATH.toFile()), "UTF-8")) {
                     INSTANCE = GSON.fromJson(reader, ModConfig.class);
-                    LinguaChatMod.LOGGER.info(com.linguachat.compat.I18nCompat.translate("linguachat.log.config_loaded", CONFIG_PATH.toAbsolutePath()));
+                    LinguaChatMod.LOGGER.info(logText("linguachat.log.config_loaded", CONFIG_PATH.toAbsolutePath()));
                 }
             } else {
                 INSTANCE = new ModConfig();
                 save();
-                LinguaChatMod.LOGGER.info(com.linguachat.compat.I18nCompat.translate("linguachat.log.config_created", CONFIG_PATH.toAbsolutePath()));
+                LinguaChatMod.LOGGER.info(logText("linguachat.log.config_created", CONFIG_PATH.toAbsolutePath()));
             }
         } catch (IOException e) {
-            LinguaChatMod.LOGGER.error(com.linguachat.compat.I18nCompat.translate("linguachat.log.config_load_error", e.getMessage()));
+            LinguaChatMod.LOGGER.error(logText("linguachat.log.config_load_error", e.getMessage()));
             INSTANCE = new ModConfig();
             save();
         }
@@ -77,12 +77,17 @@ public class ModConfig {
             CONFIG_PATH.toFile().getParentFile().mkdirs();
             try (Writer writer = new OutputStreamWriter(new FileOutputStream(CONFIG_PATH.toFile()), "UTF-8")) {
                 GSON.toJson(INSTANCE, writer);
-                LinguaChatMod.LOGGER.info(com.linguachat.compat.I18nCompat.translate("linguachat.log.config_saved", CONFIG_PATH.toAbsolutePath()));
+                if (INSTANCE != null && INSTANCE.isDebugMode()) {
+                    LinguaChatMod.LOGGER.info(logText("linguachat.log.config_saved", CONFIG_PATH.toAbsolutePath()));
+                }
             }
         } catch (IOException e) {
-            LinguaChatMod.LOGGER.error(com.linguachat.compat.I18nCompat.translate("linguachat.log.config_save_error", e.getMessage()));
-            e.printStackTrace();
+            LinguaChatMod.LOGGER.error(logText("linguachat.log.config_save_error", e.getMessage()), e);
         }
+    }
+
+    static String logText(String key, Object... args) {
+        return com.linguachat.compat.I18nCompat.translate(key, args);
     }
 
 
@@ -199,7 +204,8 @@ public class ModConfig {
     }
 
     public void setCacheSize(int cacheSize) {
-        this.cacheSize = cacheSize;
+        // same bounds as ConfigValidator - GUI save path skips the startup validation
+        this.cacheSize = Math.max(64, Math.min(4096, cacheSize));
         save();
     }
 
@@ -211,4 +217,4 @@ public class ModConfig {
         this.debugMode = debugMode;
         save();
     }
-} 
+}

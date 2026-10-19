@@ -6,7 +6,6 @@ import com.linguachat.compat.TextCompat;
 import com.linguachat.config.ModConfig;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
 
 public class KeybindHandler {
     private static long lastToggleTime = 0;
@@ -42,8 +41,9 @@ public class KeybindHandler {
             String translationKey = newState
                 ? "linguachat.feedback.outbound_enabled"
                 : "linguachat.feedback.outbound_disabled";
-            Text message = I18nCompat.translatableText(translationKey);
-            client.player.sendMessage(message, false);
+            // bypass player.sendMessage - on 1.19.3+ it routes through MessageHandler,
+            // where the mod's own mixin translates its feedback; direct add avoids the pipeline
+            client.inGameHud.getChatHud().addMessage(I18nCompat.translatableText(translationKey));
         }
     }
 

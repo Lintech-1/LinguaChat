@@ -1,13 +1,12 @@
 package com.linguachat;
 
-import com.linguachat.compat.I18nCompat;
 import com.linguachat.config.ModConfig;
+import com.linguachat.compat.I18nCompat;
 import com.linguachat.event.ChatEvents;
 import com.linguachat.translation.TranslationCache;
 import com.linguachat.translation.TranslationManager;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 //? if >=1.18 {
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,38 +44,15 @@ public class LinguaChatMod implements ModInitializer {
             TranslationCache.clear();
         });
         
-        // Register server connection/disconnection events - only once
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-            LOGGER.info(I18nCompat.translate("linguachat.log.server_connect", System.identityHashCode(handler)));
-            LOGGER.info(I18nCompat.translate("linguachat.log.server_address", handler.getConnection().getAddress()));
-            LOGGER.info(I18nCompat.translate("linguachat.log.server_connection"));
-            
-            // Clear message store and cache on connection
-            // This prevents duplication issues on reconnection
-            TranslationCache.clear();
-            com.linguachat.translation.MessageStore.clear();
-            
-            getTranslationManager();
-        });
-        
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
-            LOGGER.info(I18nCompat.translate("linguachat.log.server_disconnect", System.identityHashCode(handler)));
-            LOGGER.info(I18nCompat.translate("linguachat.log.server_disconnection"));
-            TranslationCache.clear();
-            // Clear MessageStore to prevent duplication issues on reconnection
-            com.linguachat.translation.MessageStore.clear();
-        });
-
-        LOGGER.info("LinguaChat initialized successfully");
+        LOGGER.info(I18nCompat.translate("linguachat.log.initialized"));
     }
 
     public static TranslationManager getTranslationManager() {
         if (translationManager == null) {
-            LOGGER.info("Creating new TranslationManager instance");
+            LOGGER.info(I18nCompat.translate("linguachat.log.creating_manager"));
             translationManager = new TranslationManager();
         } else {
             translationManager.ensureExecutorRunning();
-            LOGGER.info("Using existing TranslationManager instance");
         }
         return translationManager;
     }
@@ -88,4 +64,3 @@ public class LinguaChatMod implements ModInitializer {
         }
     }
 }
- 

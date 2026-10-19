@@ -128,6 +128,12 @@ public class GoogleTranslateClient implements TranslationProvider {
                 "Error parsing response: " + e.getMessage(),
                 e
             );
+        } catch (IllegalStateException | IndexOutOfBoundsException | NullPointerException e) {
+            throw new TranslationException(
+                TranslationException.ErrorType.PARSE_ERROR,
+                "Unexpected response format: " + e.getMessage(),
+                e
+            );
         //? if <1.18 {
         /*} catch (java.io.UnsupportedEncodingException e) {
             throw new TranslationException(

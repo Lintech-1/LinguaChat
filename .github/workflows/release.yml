@@ -74,6 +74,9 @@ jobs:
       name: production  # This environment requires manual approval
     
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Download Build Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -95,6 +98,21 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Release version: $VERSION"
       
+      - name: Extract changelog section
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          awk -v ver="$VERSION" '
+            /^## / { if ($0 != "## " ver) p=0 }
+            $0 == "## " ver { p=1 }
+            p
+          ' CHANGELOG.md > release_notes.md
+          if [ ! -s release_notes.md ]; then
+            echo "::error::CHANGELOG.md: no section '## $VERSION'. Add it before tagging."
+            exit 1
+          fi
+          echo "--- release notes ---"
+          cat release_notes.md
+      
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -102,9 +120,25 @@ jobs:
           gh release create ${{ github.ref_name }} \
             --repo ${{ github.repository }} \
             --title "LinguaChat ${{ steps.version.outputs.version }}" \
+            --notes-file release_notes.md \
             --generate-notes \
             artifacts/*.jar \
             artifacts/checksums.txt
+
+      - name: Publish to Modrinth and CurseForge
+        uses: Kira-NT/mc-publish@v3
+        with:
+          modrinth-id: linguachat
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          curseforge-id: linguachat
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          # sources jars excluded; game versions and dependencies are read from each jar's fabric.mod.json
+          files: "artifacts/!(*-sources).jar"
+          name: LinguaChat ${{ steps.version.outputs.version }}
+          version: ${{ steps.version.outputs.version }}
+          version-type: release
+          changelog-file: release_notes.md
+          loaders: fabric
       
       - name: Release Summary
         run: |

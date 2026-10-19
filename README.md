@@ -107,8 +107,8 @@ You can also edit the file directly: `config/linguachat.json`
 | `defaultTargetLang` | `"en"` | Target language for both incoming messages (messages from other players) and outgoing messages (your messages sent to server) |
 | `preferredTranslator` | `"google"` | Provider: `google`, `deepl`, `kagi` |
 | `deeplApiKey` | `""` | DeepL API key |
-| `kagiApiKey` | `""` | Kagi API token |
-| `kagiSessionToken` | `""` | Kagi session token |
+| `kagiApiKey` | `""` | Kagi API token ([settings/api](https://kagi.com/settings/api)) |
+| `kagiSessionToken` | `""` | Value of the `kagi_session` cookie from your logged-in browser (DevTools → Application → Cookies → kagi.com). Do NOT paste the session link itself — it can't authorize the API. |
 | `showOriginalOnHover` | `true` | Show original on hover |
 | `cacheSize` | `512` | Translation cache size |
 | `debugMode` | `false` | Debug logging |
@@ -119,7 +119,7 @@ You can also edit the file directly: `config/linguachat.json`
 |----------|------|---------|-----------|
 | **Google** | Free | Not required | 100+ |
 | **DeepL** | Free/Paid | [Get API Key](https://www.deepl.com/pro-api) | 30+ |
-| **Kagi** | Kagi Pass | API Token ([settings/api](https://kagi.com/settings/api)) or Session Token ([settings/user_details](https://kagi.com/settings/user_details)) | Multiple |
+| **Kagi** | Kagi Pass | [API Token](https://kagi.com/settings/api), or the `kagi_session` **cookie value** from DevTools. The session link itself does not work (it's an OAuth login page, not a token). | Multiple |
 
 ---
 

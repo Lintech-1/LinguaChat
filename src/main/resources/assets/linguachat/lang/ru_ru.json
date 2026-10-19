@@ -72,11 +72,6 @@
   "linguachat.log.sender_key_not_determined": "Ключ отправителя не определен",
 
   "linguachat.log.reinit_thread_pool": "Переинициализация пула потоков для перевода",
-  "linguachat.log.language_match_detected": "Обнаружено совпадение языка: текст не изменился при переводе на %s",
-  "linguachat.log.retry_english": "Повторная попытка перевода на английский как резервный вариант",
-  "linguachat.log.fallback_english_success": "Успешный резервный перевод на английский: '%s' -> '%s'",
-  "linguachat.log.english_no_change": "Английский перевод также не изменил текст, возвращаем оригинал",
-  "linguachat.log.retry_english_error": "Ошибка при повторной попытке перевода на английский: %s",
   "linguachat.log.all_providers_failed": "Все провайдеры перевода не сработали, возвращаем оригинальный текст",
   "linguachat.log.translation_error": "Ошибка при переводе: %s",
   "linguachat.log.translation_processing_error": "Ошибка при обработке перевода: %s",
@@ -116,9 +111,27 @@
   "linguachat.log.debug.intercept_overlay": "=== ПЕРЕХВАТ InGameHud.setOverlayMessage ===",
   "linguachat.log.debug.translating_message": "Перевод сообщения: %s",
   "linguachat.log.debug.translating_message_meta": "Перевод сообщения с метаданными: %s",
+  "linguachat.log.debug.chat_screen_initialized": "Экран чата инициализирован",
+  "linguachat.log.debug.original_message": "Исходное сообщение: %s",
+  "linguachat.log.debug.send_raw_recently_processed": "Сообщение уже обработано, отправляем без повторного перевода",
+  "linguachat.log.debug.outgoing_not_sent": "Ошибка перевода, сообщение не отправлено: %s",
+  "linguachat.log.debug.outgoing_translated": "Переведено исходящее сообщение: %s",
+  "linguachat.log.debug.original_saved_hover": "Оригинальный текст '%s' сохранён для эффекта наведения",
+  "linguachat.log.debug.no_change_send_original": "Перевод не изменил сообщение, отправляем оригинал: %s",
+  "linguachat.log.debug.sent_directly": "Сообщение отправлено напрямую: %s",
+  "linguachat.log.debug.chat_screen_closed": "Экран чата закрыт",
+  "linguachat.log.debug.chat_screen_not_closed": "Экран чата уже сменён, не закрываем",
+  "linguachat.log.debug.message_stored": "MessageStore: сохранено [%s -> %s]",
+  "linguachat.log.client_init": "Инициализация клиента LinguaChat",
+  "linguachat.log.client_init_done": "Клиент LinguaChat инициализирован",
+  "linguachat.log.creating_manager": "Создаётся новый экземпляр TranslationManager",
+  "linguachat.log.initialized": "LinguaChat успешно инициализирован",
 
   "linguachat.hover.original": "Оригинал: %s",
 
   "linguachat.feedback.outbound_enabled": "§a[LinguaChat] Перевод исходящих сообщений включен",
-  "linguachat.feedback.outbound_disabled": "§c[LinguaChat] Перевод исходящих сообщений отключен"
+  "linguachat.feedback.outbound_disabled": "§c[LinguaChat] Перевод исходящих сообщений отключен",
+
+  "linguachat.error.translation_failed": "§c[LinguaChat] Ошибка перевода: %s. Показано оригинальное сообщение.",
+  "linguachat.error.outgoing_failed": "§c[LinguaChat] Ошибка перевода: %s. Сообщение НЕ отправлено. Нажми N, чтобы отключить перевод, и отправь без него."
 }

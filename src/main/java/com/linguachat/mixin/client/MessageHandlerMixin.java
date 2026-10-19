@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.linguachat.LinguaChatMod;
@@ -49,8 +50,14 @@ public class MessageHandlerMixin {
     
     @Unique private static final Pattern PLAYER_MESSAGE_PATTERN = Pattern.compile("<([^>]+)>\\s*(.*)");
     @Unique private static final Pattern EXTENDED_MESSAGE_PATTERN = Pattern.compile("(?:<([^>]+)>|\\[([^\\]]+)\\]|\\(([^)]+)\\)|(?:^|\\s+)([\\w\\d_-]+):)\\s*(.*)");
-    @Unique private static final boolean DEBUG = true;
     
+    @Unique
+    private static void debugLog(String key, Object... args) {
+        if (ModConfig.get().isDebugMode()) {
+            LinguaChatMod.LOGGER.info(I18nCompat.translate(key, args));
+        }
+    }
+
     // ThreadLocal stores sender info per-thread to avoid race conditions
     //? if >=1.19.3 {
     @Unique private static final ThreadLocal<GameProfile> CURRENT_SENDER = new ThreadLocal<>();
@@ -59,7 +66,11 @@ public class MessageHandlerMixin {
     *///?} else {
     /*@Unique private static final ThreadLocal<PlayerPublicKey> CURRENT_SENDER_KEY = new ThreadLocal<>();
     *///?}
-    
+
+    // true when the message arrived via the system path (onGameMessage(Text, overlay)) -
+    // these keep vanilla localization and must not be translated like player chat
+    @Unique private static final ThreadLocal<Boolean> CURRENT_IS_SYSTEM = new ThreadLocal<>();
+
     @Unique
     private boolean shouldTranslateMessage(GameProfile sender) {
         return shouldTranslateMessage(sender, null);
@@ -116,7 +127,7 @@ public class MessageHandlerMixin {
                 messageText.contains("покинул игру") ||
                 messageText.startsWith("* ") ||
                 messageText.startsWith("-> ")) {
-                LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.system_message_detected"));
+                debugLog("linguachat.log.system_message_detected");
                 return false;
             }
         }
@@ -167,7 +178,7 @@ public class MessageHandlerMixin {
                 messageText.contains("покинул игру") ||
                 messageText.startsWith("* ") ||
                 messageText.startsWith("-> ")) {
-                LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.system_message_detected"));
+                debugLog("linguachat.log.system_message_detected");
                 return false;
             }
         }
@@ -183,6 +194,13 @@ public class MessageHandlerMixin {
     
     @Unique
     private boolean shouldTranslateMessage(GameProfile sender, Text message) {
+        // system messages keep vanilla localization; translate only if text looks like
+        // player chat (some servers/plugins send real chat as system messages)
+        if (Boolean.TRUE.equals(CURRENT_IS_SYSTEM.get()) &&
+            (message == null || extractPlayerNameFromMessage(message.getString()) == null)) {
+            return false;
+        }
+
         if (!ModConfig.get().isEnabled()) {
             return false;
         }
@@ -219,7 +237,7 @@ public class MessageHandlerMixin {
                 messageText.contains("покинул игру") ||
                 messageText.startsWith("* ") ||
                 messageText.startsWith("-> ")) {
-                LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.system_message_detected"));
+                debugLog("linguachat.log.system_message_detected");
                 return false;
             }
             
@@ -233,26 +251,23 @@ public class MessageHandlerMixin {
                     String original = MessageStore.getOriginalMessage(key);
                     
                     if (original != null) {
-                        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.message_already_translated", 
-                                                    extractedPlayerName, extractedMessageText));
+                        debugLog("linguachat.log.message_already_translated", extractedPlayerName, extractedMessageText);
                         return false;
                     }
                     
                     if (MessageStore.wasMessageRecentlyProcessed(extractedPlayerName, extractedMessageText)) {
-                        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.message_recently_processed", 
-                                                    extractedPlayerName, extractedMessageText));
+                        debugLog("linguachat.log.message_recently_processed", extractedPlayerName, extractedMessageText);
                         return false;
                     }
                     
                     String originalKey = MessageStore.createMessageKey(extractedPlayerName, extractedMessageText);
                     if (MessageStore.getOriginalMessage(originalKey) != null) {
-                        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.original_in_cache", originalKey));
+                        debugLog("linguachat.log.original_in_cache", originalKey);
                         return false;
                     }
                     
                     if (isOwnMessage) {
-                        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.checking_own_message", 
-                                                   extractedPlayerName));
+                        debugLog("linguachat.log.checking_own_message", extractedPlayerName);
                         
                         MessageStore.markMessageAsProcessed(extractedPlayerName, extractedMessageText);
                     }
@@ -262,21 +277,21 @@ public class MessageHandlerMixin {
         
         if (isOwnMessage) {
             boolean shouldTranslate = ModConfig.get().isTranslateOutgoing();
-            if (DEBUG) {
+            if (ModConfig.get().isDebugMode()) {
                 if (shouldTranslate) {
-                    LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.should_translate_yes_own"));
+                    debugLog("linguachat.log.should_translate_yes_own");
                 } else {
-                    LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.should_translate_no_own"));
+                    debugLog("linguachat.log.should_translate_no_own");
                 }
             }
             return shouldTranslate;
         } else {
             boolean shouldTranslate = ModConfig.get().isTranslateIncoming();
-            if (DEBUG) {
+            if (ModConfig.get().isDebugMode()) {
                 if (shouldTranslate) {
-                    LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.should_translate_yes_other"));
+                    debugLog("linguachat.log.should_translate_yes_other");
                 } else {
-                    LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.should_translate_no_other"));
+                    debugLog("linguachat.log.should_translate_no_other");
                 }
             }
             return shouldTranslate;
@@ -295,13 +310,16 @@ public class MessageHandlerMixin {
             Instant timestamp,
             CallbackInfoReturnable<Boolean> cir) {
         
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.separator"));
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.method_called_1_19_3"));
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.separator"));
+        debugLog("linguachat.log.separator");
+        debugLog("linguachat.log.method_called_1_19_3");
+        debugLog("linguachat.log.separator");
         
         String messageContent = content.getString();
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.message_content", messageContent));
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.is_system", isSystem));
+        debugLog("linguachat.log.message_content", messageContent);
+        debugLog("linguachat.log.is_system", isSystem);
+
+        // signed chat path - explicitly not a system message
+        CURRENT_IS_SYSTEM.set(false);
 
         // Check for system messages
         if (messageContent.contains("получил достижение") ||  
@@ -313,7 +331,7 @@ public class MessageHandlerMixin {
             messageContent.contains("[CHAT]") ||
             isSystem) {
             
-            LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.debug.system_no_profile"));
+            debugLog("linguachat.log.debug.system_no_profile");
             CURRENT_SENDER.remove();
             return;
         }
@@ -321,13 +339,13 @@ public class MessageHandlerMixin {
         if (profile != null) {
             CURRENT_SENDER.set(profile);
             //? if >=1.21.11 {
-            LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.sender_profile_saved", profile.name()));
+            debugLog("linguachat.log.sender_profile_saved", profile.name());
             //?} else {
-            /*LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.sender_profile_saved", profile.getName()));
+            /*debugLog("linguachat.log.sender_profile_saved", profile.getName());
             *///?}
         } else {
             CURRENT_SENDER.remove();
-            LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.sender_profile_not_determined"));
+            debugLog("linguachat.log.sender_profile_not_determined");
         }
     }
     //?} else if >=1.19.2 && <1.19.3 {
@@ -341,13 +359,13 @@ public class MessageHandlerMixin {
             Instant timestamp,
             CallbackInfoReturnable<Boolean> cir) {
         
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.separator"));
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.method_called_1_19_2"));
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.separator"));
+        debugLog("linguachat.log.separator");
+        debugLog("linguachat.log.method_called_1_19_2");
+        debugLog("linguachat.log.separator");
 
         String messageContent = content.getString();
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.message_content", messageContent));
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.is_system", isSystem));
+        debugLog("linguachat.log.message_content", messageContent);
+        debugLog("linguachat.log.is_system", isSystem);
 
         // Check for system messages
         if (messageContent.contains("получил достижение") ||
@@ -359,7 +377,7 @@ public class MessageHandlerMixin {
             messageContent.contains("[CHAT]") ||
             isSystem) {
 
-            LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.debug.system_no_entry"));
+            debugLog("linguachat.log.debug.system_no_entry");
             CURRENT_SENDER_ENTRY.remove();
             return;
         }
@@ -368,13 +386,13 @@ public class MessageHandlerMixin {
             CURRENT_SENDER_ENTRY.set(senderEntry);
             GameProfile profile = senderEntry.getProfile();
             if (profile != null) {
-                LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.sender_entry_saved", profile.getName()));
+                debugLog("linguachat.log.sender_entry_saved", profile.getName());
             } else {
-                LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.sender_entry_no_profile"));
+                debugLog("linguachat.log.sender_entry_no_profile");
             }
         } else {
             CURRENT_SENDER_ENTRY.remove();
-            LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.sender_entry_not_determined"));
+            debugLog("linguachat.log.sender_entry_not_determined");
         }
     }
     *///?} else {
@@ -388,13 +406,13 @@ public class MessageHandlerMixin {
             Instant timestamp,
             CallbackInfoReturnable<Boolean> cir) {
 
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.separator"));
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.method_called_1_19_2"));
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.separator"));
+        debugLog("linguachat.log.separator");
+        debugLog("linguachat.log.method_called_1_19_2");
+        debugLog("linguachat.log.separator");
 
         String messageContent = content.getString();
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.message_content", messageContent));
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.is_system", isSystem));
+        debugLog("linguachat.log.message_content", messageContent);
+        debugLog("linguachat.log.is_system", isSystem);
 
         // Check for system messages 
         if (messageContent.contains("получил достижение") ||  
@@ -406,28 +424,42 @@ public class MessageHandlerMixin {
             messageContent.contains("[CHAT]") ||
             isSystem) {
 
-            LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.debug.system_no_key"));
+            debugLog("linguachat.log.debug.system_no_key");
             CURRENT_SENDER_KEY.remove();
             return;
         }
 
         if (senderPublicKey != null) {
             CURRENT_SENDER_KEY.set(senderPublicKey);
-            LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.sender_key_saved"));
+            debugLog("linguachat.log.sender_key_saved");
         } else {
             CURRENT_SENDER_KEY.remove();
-            LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.sender_key_not_determined"));
+            debugLog("linguachat.log.sender_key_not_determined");
         }
     }
     *///?}
-    
+
+    // System messages (achievements, /say, local feedback) arrive via onGameMessage(Text, overlay),
+    // bypassing processChatMessageInternal - mark them so the redirects leave them untranslated.
+    // Method verified present in yarn 1.19.2-1.21.11; gated >=1.19.3 because only there
+    // processChatMessageInternal inject resets the flag per chat message.
+    //? if >=1.19.3 {
+    @Inject(method = "onGameMessage(Lnet/minecraft/text/Text;Z)V", at = @At("HEAD"))
+    private void onSystemGameMessage(Text message, boolean overlay, CallbackInfo ci) {
+        CURRENT_IS_SYSTEM.set(true);
+        // drop stale sender from the previous chat message - otherwise a system message
+        // (e.g. plugin tellraw "<Shop> text") is treated as own chat and translated whole
+        CURRENT_SENDER.remove();
+    }
+    //?}
+
     // Intercept addMessage(Text) for ChatHud
     @Redirect(method = "*", 
               at = @At(value = "INVOKE", 
                      target = "Lnet/minecraft/client/gui/hud/ChatHud;addMessage(Lnet/minecraft/text/Text;)V"))
     private void redirectAddMessage(ChatHud instance, Text message) {
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.debug.intercept_add_message"));
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.debug.original_text", message.getString()));
+        debugLog("linguachat.log.debug.intercept_add_message");
+        debugLog("linguachat.log.debug.original_text", message.getString());
         
         // Get current sender (depends on version)
         //? if >=1.19.3 {
@@ -451,7 +483,7 @@ public class MessageHandlerMixin {
                 
                 if (original != null && !original.equals(messageText)) {
                     // This is a translated message, add hover effect with original
-                    LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.debug.hover_added", messageText, original));
+                    debugLog("linguachat.log.debug.hover_added", messageText, original);
                     Text messageWithHover = createMessageWithHover(message.getString(), original, messageText, message.getStyle());
                     instance.addMessage(messageWithHover);
                     return;
@@ -491,8 +523,8 @@ public class MessageHandlerMixin {
               at = @At(value = "INVOKE", 
                      target = "Lnet/minecraft/client/gui/hud/ChatHud;addMessage(Lnet/minecraft/text/Text;Lnet/minecraft/network/message/MessageSignatureData;Lnet/minecraft/client/gui/hud/MessageIndicator;)V"))
     private void redirectAddMessageWithMeta(ChatHud instance, Text message, MessageSignatureData messageSignatureData, MessageIndicator indicator) {
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.debug.intercept_add_message_meta"));
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.debug.original_text", message.getString()));
+        debugLog("linguachat.log.debug.intercept_add_message_meta");
+        debugLog("linguachat.log.debug.original_text", message.getString());
         
         // Get current sender (depends on version)
         //? if >=1.19.3 {
@@ -516,7 +548,7 @@ public class MessageHandlerMixin {
                 
                 if (original != null && !original.equals(messageText)) {
                     // This is a translated message, add hover effect with original
-                    LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.debug.hover_added", messageText, original));
+                    debugLog("linguachat.log.debug.hover_added", messageText, original);
                     Text messageWithHover = createMessageWithHover(message.getString(), original, messageText, message.getStyle());
                     instance.addMessage(messageWithHover, messageSignatureData, indicator);
                     return;
@@ -556,8 +588,8 @@ public class MessageHandlerMixin {
               at = @At(value = "INVOKE", 
                      target = "Lnet/minecraft/client/gui/hud/InGameHud;setOverlayMessage(Lnet/minecraft/text/Text;Z)V"))
     private void redirectSetOverlayMessage(InGameHud instance, Text message, boolean tinted) {
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.debug.intercept_overlay"));
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.debug.original_text", message.getString()));
+        debugLog("linguachat.log.debug.intercept_overlay");
+        debugLog("linguachat.log.debug.original_text", message.getString());
         
         // If overlay message translation is enabled
         //? if >=1.19.3 {
@@ -590,7 +622,7 @@ public class MessageHandlerMixin {
         
         Text textToTranslate = TextCompat.literal(messageText);
         
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.debug.translating_message", messageText));
+        debugLog("linguachat.log.debug.translating_message", messageText);
         
         LinguaChatMod.getTranslationManager().translateAsync(
             textToTranslate,
@@ -638,7 +670,7 @@ public class MessageHandlerMixin {
         
         Text textToTranslate = TextCompat.literal(messageText);
 
-        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.debug.translating_message_meta", messageText));
+        debugLog("linguachat.log.debug.translating_message_meta", messageText);
 
         // Perform async translation
         LinguaChatMod.getTranslationManager().translateAsync(
@@ -807,9 +839,9 @@ public class MessageHandlerMixin {
                 HoverEvent hoverEvent = TextCompat.createShowTextHoverEvent(
                     TextCompat.literal(I18nCompat.translate("linguachat.hover.original", originalMessage))
                 );
-                result.append(TextCompat.literal(translatedMessage).styled(style -> style.withHoverEvent(hoverEvent)));
+                result.append(TextCompat.literal(translatedMessage).styled(style -> baseStyle.withHoverEvent(hoverEvent)));
             } else {
-                result.append(TextCompat.literal(translatedMessage));
+                result.append(TextCompat.literal(translatedMessage).setStyle(baseStyle));
             }
         } else {
             // If prefix not found, apply hover to entire message
@@ -817,7 +849,7 @@ public class MessageHandlerMixin {
                 HoverEvent hoverEvent = TextCompat.createShowTextHoverEvent(
                     TextCompat.literal(I18nCompat.translate("linguachat.hover.original", originalMessage))
                 );
-                result = TextCompat.literal(translatedMessage).styled(style -> style.withHoverEvent(hoverEvent));
+                result = TextCompat.literal(translatedMessage).styled(style -> baseStyle.withHoverEvent(hoverEvent));
             } else {
                 result = TextCompat.literal(translatedMessage).setStyle(baseStyle);
             }
@@ -958,4 +990,4 @@ public class MessageHandlerMixin {
         
         return extractPlayerNameFromMessage(messageText);
     }
-} 
+}

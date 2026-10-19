@@ -4,7 +4,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '2.0.0'
+version = '2.1.0'
 group = 'com.linguachat'
 
 // Configure JAR naming with Minecraft version
@@ -116,7 +116,8 @@ processResources {
         fabricApiModId = "fabric"
     }
     
-    // Determine if MessageHandlerMixin is needed (only for 1.19+)
+    // Incoming chat uses one owner per MC version to avoid double-processing.
+    def clientPlayNetworkHandlerMixin = sc.current.parsed < "1.19" ? ',\n    "client.ClientPlayNetworkHandlerMixin"' : ''
     def messageHandlerMixin = sc.current.parsed >= "1.19" ? ',\n    "client.MessageHandlerMixin"' : ''
 
     filesMatching("fabric.mod.json") {
@@ -133,6 +134,7 @@ processResources {
     filesMatching("linguachat.mixins.json") {
         expand(
             "mixin_java_level": mixinJavaLevel,
+            "client_play_network_handler_mixin": clientPlayNetworkHandlerMixin,
             "message_handler_mixin": messageHandlerMixin
         )
     }
@@ -174,4 +176,4 @@ jar {
     from("LICENSE") {
         rename { "${it}_${base.archivesName.get()}"}
     }
-} 
+}

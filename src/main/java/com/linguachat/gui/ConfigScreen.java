@@ -129,7 +129,7 @@ public class ConfigScreen extends Screen {
         // Provider selection
         this.providerButton = ButtonCompat.create(
             centerX - BUTTON_WIDTH / 2, currentY, BUTTON_WIDTH, ROW_HEIGHT,
-            I18nCompat.translatableText("linguachat.config.provider", currentProvider.toUpperCase()),
+            I18nCompat.translatableText("linguachat.config.provider", I18nCompat.translate("linguachat.config.provider." + currentProvider)),
             button -> {
                 if ("google".equals(currentProvider)) {
                     currentProvider = "deepl";
@@ -141,7 +141,7 @@ public class ConfigScreen extends Screen {
                     currentProvider = "google";
                 }
                 config.setPreferredTranslator(currentProvider);
-                button.setMessage(I18nCompat.translatableText("linguachat.config.provider", currentProvider.toUpperCase()));
+                button.setMessage(I18nCompat.translatableText("linguachat.config.provider", I18nCompat.translate("linguachat.config.provider." + currentProvider)));
                 // Recreate screen to update API fields
                 ScreenCompat.setScreen(this.client, new ConfigScreen(parent));
             }
@@ -155,9 +155,9 @@ public class ConfigScreen extends Screen {
 
         // Language fields (tabular layout)
         //? if >=1.21.11 {
-        this.sourceLangField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, this.sourceLangField, TextCompat.literal("Source Lang"));
+        this.sourceLangField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, this.sourceLangField, I18nCompat.translatableText("linguachat.config.source_lang"));
         //?} else {
-        /*this.sourceLangField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, TextCompat.literal("Source Lang"));
+        /*this.sourceLangField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, I18nCompat.translatableText("linguachat.config.source_lang"));
         *///?}
         this.sourceLangField.setMaxLength(10);
         this.sourceLangField.setText(config.getDefaultSourceLang());
@@ -169,9 +169,9 @@ public class ConfigScreen extends Screen {
         currentY += ROW_HEIGHT + ROW_SPACING;
 
         //? if >=1.21.11 {
-        this.targetLangField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, this.targetLangField, TextCompat.literal("Target Lang"));
+        this.targetLangField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, this.targetLangField, I18nCompat.translatableText("linguachat.config.target_lang"));
         //?} else {
-        /*this.targetLangField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, TextCompat.literal("Target Lang"));
+        /*this.targetLangField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, I18nCompat.translatableText("linguachat.config.target_lang"));
         *///?}
         this.targetLangField.setMaxLength(10);
         this.targetLangField.setText(config.getDefaultTargetLang());
@@ -185,9 +185,9 @@ public class ConfigScreen extends Screen {
         // API Key fields (depends on provider)
         if ("deepl".equals(currentProvider)) {
             //? if >=1.21.11 {
-            this.apiKeyField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, this.apiKeyField, TextCompat.literal("DeepL API Key"));
+            this.apiKeyField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, this.apiKeyField, I18nCompat.translatableText("linguachat.config.api_key.deepl"));
             //?} else {
-            /*this.apiKeyField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, TextCompat.literal("DeepL API Key"));
+            /*this.apiKeyField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, I18nCompat.translatableText("linguachat.config.api_key.deepl"));
             *///?}
             this.apiKeyField.setMaxLength(100);
             this.apiKeyField.setText(config.getDeeplApiKey());
@@ -199,9 +199,9 @@ public class ConfigScreen extends Screen {
             currentY += ROW_HEIGHT + SECTION_GAP;
         } else if ("kagi".equals(currentProvider)) {
             //? if >=1.21.11 {
-            this.apiKeyField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, this.apiKeyField, TextCompat.literal("Kagi API Key"));
+            this.apiKeyField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, this.apiKeyField, I18nCompat.translatableText("linguachat.config.api_key.kagi"));
             //?} else {
-            /*this.apiKeyField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, TextCompat.literal("Kagi API Key"));
+            /*this.apiKeyField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, I18nCompat.translatableText("linguachat.config.api_key.kagi"));
             *///?}
             this.apiKeyField.setMaxLength(100);
             this.apiKeyField.setText(config.getKagiApiKey());
@@ -213,9 +213,9 @@ public class ConfigScreen extends Screen {
             currentY += ROW_HEIGHT + ROW_SPACING;
             
             //? if >=1.21.11 {
-            this.sessionTokenField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, this.sessionTokenField, TextCompat.literal("Kagi Session Token"));
+            this.sessionTokenField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, this.sessionTokenField, I18nCompat.translatableText("linguachat.config.session_token"));
             //?} else {
-            /*this.sessionTokenField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, TextCompat.literal("Kagi Session Token"));
+            /*this.sessionTokenField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, I18nCompat.translatableText("linguachat.config.session_token"));
             *///?}
             this.sessionTokenField.setMaxLength(200);
             this.sessionTokenField.setText(config.getKagiSessionToken());
@@ -232,9 +232,9 @@ public class ConfigScreen extends Screen {
 
         // Cache Size
         //? if >=1.21.11 {
-        this.cacheSizeField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, this.cacheSizeField, TextCompat.literal("Cache Size"));
+        this.cacheSizeField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, this.cacheSizeField, I18nCompat.translatableText("linguachat.config.cache_size"));
         //?} else {
-        /*this.cacheSizeField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, TextCompat.literal("Cache Size"));
+        /*this.cacheSizeField = new TextFieldWidget(this.textRenderer, fieldX, currentY, FIELD_WIDTH, ROW_HEIGHT, I18nCompat.translatableText("linguachat.config.cache_size"));
         *///?}
         this.cacheSizeField.setMaxLength(5);
         this.cacheSizeField.setText(String.valueOf(config.getCacheSize()));
@@ -284,11 +284,7 @@ public class ConfigScreen extends Screen {
 
         ButtonWidget cancelButton = ButtonCompat.create(
             centerX + 5, bottomY, BUTTON_WIDTH / 2 - 2, ROW_HEIGHT,
-            //? if >=1.19 {
-            ScreenTexts.CANCEL,
-            //?} else {
-            /*TextCompat.literal("Cancel"),
-            *///?}
+            I18nCompat.translatableText("linguachat.config.cancel"),
             //? if >=1.18 {
             button -> this.close()
             //?} else {

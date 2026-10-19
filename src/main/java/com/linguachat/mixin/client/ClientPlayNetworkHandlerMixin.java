@@ -195,19 +195,19 @@ public class ClientPlayNetworkHandlerMixin {
                 HoverEvent hoverEvent = TextCompat.createShowTextHoverEvent(
                     TextCompat.literal(I18nCompat.translate("linguachat.hover.original", originalMessage))
                 );
-                result.append(TextCompat.literal(translatedMessage).styled(style -> style.withHoverEvent(hoverEvent)));
+                result.append(TextCompat.literal(translatedMessage).styled(style -> baseStyle.withHoverEvent(hoverEvent)));
                 if (ModConfig.get().isDebugMode()) {
                     LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.debug.composite_hover"));
                 }
             } else {
-                result.append(TextCompat.literal(translatedMessage));
+                result.append(TextCompat.literal(translatedMessage).setStyle(baseStyle));
             }
         } else {
             if (ModConfig.get().isShowOriginalOnHover()) {
                 HoverEvent hoverEvent = TextCompat.createShowTextHoverEvent(
                     TextCompat.literal(I18nCompat.translate("linguachat.hover.original", originalMessage))
                 );
-                result = TextCompat.literal(translatedMessage).styled(style -> style.withHoverEvent(hoverEvent));
+                result = TextCompat.literal(translatedMessage).styled(style -> baseStyle.withHoverEvent(hoverEvent));
             } else {
                 result = TextCompat.literal(translatedMessage).setStyle(baseStyle);
             }

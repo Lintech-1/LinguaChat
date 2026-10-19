@@ -5,6 +5,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.linguachat.LinguaChatMod;
+import com.linguachat.compat.I18nCompat;
+import com.linguachat.config.ModConfig;
 
 /**
  * Class for storing and retrieving original message texts
@@ -12,15 +14,18 @@ import com.linguachat.LinguaChatMod;
  */
 public class MessageStore {
     private static final Map<String, String> originalMessages = new ConcurrentHashMap<>();
+    private static final Map<String, Long> originalMessageTimes = new ConcurrentHashMap<>();
     
     // Cache for tracking recently processed messages with timestamps
     private static final Map<String, Long> recentlyProcessedMessages = new ConcurrentHashMap<>();
     
     // Map for tracking related messages (original -> translation and translation -> original)
     private static final Map<String, String> relatedMessages = new ConcurrentHashMap<>();
+    private static final Map<String, Long> relatedMessageTimes = new ConcurrentHashMap<>();
     
     // Entry lifetime in recently processed messages cache (in milliseconds)
     private static final long CACHE_EXPIRY_TIME_MS = 5000; // 5 seconds
+    private static final long MESSAGE_STORE_EXPIRY_TIME_MS = 10 * 60 * 1000; // 10 minutes
     
     /**
      * Stores original message text
@@ -28,9 +33,11 @@ public class MessageStore {
      * @param originalMessage original message text
      */
     public static void storeOriginalMessage(String key, String originalMessage) {
+        cleanExpiredEntries();
         originalMessages.put(key, originalMessage);
+        originalMessageTimes.put(key, System.currentTimeMillis());
         
-        LinguaChatMod.LOGGER.info("MessageStore: stored [" + key + " -> " + originalMessage + "]");
+        debugLog(I18nCompat.translate("linguachat.log.debug.message_stored", key, originalMessage));
     }
     
     /**
@@ -39,6 +46,12 @@ public class MessageStore {
      * @return original text or null if not found
      */
     public static String getOriginalMessage(String key) {
+        cleanExpiredEntries();
+        if (isExpired(originalMessageTimes.get(key), MESSAGE_STORE_EXPIRY_TIME_MS)) {
+            originalMessages.remove(key);
+            originalMessageTimes.remove(key);
+            return null;
+        }
         return originalMessages.get(key);
     }
     
@@ -46,10 +59,12 @@ public class MessageStore {
      * Clears all message stores
      */
     public static void clear() {
-        LinguaChatMod.LOGGER.info("MessageStore: clearing all message stores");
+        debugLog(I18nCompat.translate("linguachat.log.message_store_clear"));
         originalMessages.clear();
+        originalMessageTimes.clear();
         recentlyProcessedMessages.clear();
         relatedMessages.clear();
+        relatedMessageTimes.clear();
     }
     
     /**
@@ -69,11 +84,15 @@ public class MessageStore {
      * @param translatedText translated text
      */
     public static void linkMessages(String playerName, String originalText, String translatedText) {
+        cleanExpiredEntries();
         String originalKey = createMessageKey(playerName, originalText);
         String translatedKey = createMessageKey(playerName, translatedText);
+        long now = System.currentTimeMillis();
         
         relatedMessages.put(originalKey, translatedKey);
         relatedMessages.put(translatedKey, originalKey);
+        relatedMessageTimes.put(originalKey, now);
+        relatedMessageTimes.put(translatedKey, now);
         
         storeOriginalMessage(translatedKey, originalText);
     }
@@ -85,7 +104,13 @@ public class MessageStore {
      * @return true if message is linked to another
      */
     public static boolean isLinkedMessage(String playerName, String messageText) {
+        cleanExpiredEntries();
         String key = createMessageKey(playerName, messageText);
+        if (isExpired(relatedMessageTimes.get(key), MESSAGE_STORE_EXPIRY_TIME_MS)) {
+            relatedMessages.remove(key);
+            relatedMessageTimes.remove(key);
+            return false;
+        }
         return relatedMessages.containsKey(key);
     }
     
@@ -102,6 +127,13 @@ public class MessageStore {
         cleanExpiredEntries();
     }
     
+    /**
+     * Removes the processed mark so a failed send can be retried normally
+     */
+    public static void unmarkMessageAsProcessed(String playerName, String messageText) {
+        recentlyProcessedMessages.remove(createMessageKey(playerName, messageText));
+    }
+
     /**
      * Checks if message was recently processed
      * @param playerName player name
@@ -140,5 +172,31 @@ public class MessageStore {
                 recentlyProcessedMessages.remove(key);
             }
         });
+
+        originalMessageTimes.keySet().forEach(key -> {
+            Long timestamp = originalMessageTimes.get(key);
+            if (timestamp != null && (currentTime - timestamp) > MESSAGE_STORE_EXPIRY_TIME_MS) {
+                originalMessages.remove(key);
+                originalMessageTimes.remove(key);
+            }
+        });
+
+        relatedMessageTimes.keySet().forEach(key -> {
+            Long timestamp = relatedMessageTimes.get(key);
+            if (timestamp != null && (currentTime - timestamp) > MESSAGE_STORE_EXPIRY_TIME_MS) {
+                relatedMessages.remove(key);
+                relatedMessageTimes.remove(key);
+            }
+        });
     }
-} 
+
+    private static boolean isExpired(Long timestamp, long maxAgeMs) {
+        return timestamp != null && (System.currentTimeMillis() - timestamp) > maxAgeMs;
+    }
+
+    private static void debugLog(String message) {
+        if (ModConfig.get().isDebugMode()) {
+            LinguaChatMod.LOGGER.info(message);
+        }
+    }
+}

@@ -9,15 +9,25 @@ import com.linguachat.translation.TranslationLogger;
  * DeepL translation provider (requires API key)
  */
 public class DeepLTranslateClient implements TranslationProvider {
-    private final Translator deeplTranslator;
+    private Translator deeplTranslator;
+    private String activeApiKey = "";
 
     public DeepLTranslateClient() {
+        refreshTranslator();
+    }
+
+    private void refreshTranslator() {
         String apiKey = ModConfig.get().getDeeplApiKey();
-        if (apiKey != null && !apiKey.isEmpty()) {
-            this.deeplTranslator = new Translator(apiKey);
-        } else {
-            this.deeplTranslator = null;
+        if (apiKey == null) {
+            apiKey = "";
         }
+
+        if (apiKey.equals(activeApiKey)) {
+            return;
+        }
+
+        activeApiKey = apiKey;
+        deeplTranslator = apiKey.isEmpty() ? null : new Translator(apiKey);
     }
 
     /**
@@ -41,6 +51,7 @@ public class DeepLTranslateClient implements TranslationProvider {
     
     @Override
     public String translate(String text, String sourceLang, String targetLang) throws TranslationException {
+        refreshTranslator();
         if (deeplTranslator == null) {
             throw new TranslationException(
                 TranslationException.ErrorType.AUTHENTICATION_ERROR,
@@ -91,6 +102,7 @@ public class DeepLTranslateClient implements TranslationProvider {
     
     @Override
     public boolean isAvailable() {
+        refreshTranslator();
         return deeplTranslator != null;
     }
     

@@ -14,7 +14,7 @@
   },
   "license": "MIT",
   "icon": "assets/linguachat/linguachat.png",
-  "environment": "*",
+  "environment": "client",
   "entrypoints": {
     "main": [
       "com.linguachat.LinguaChatMod"
@@ -35,4 +35,4 @@
     "java": ">=${java_version}",
     "${fabric_api_mod_id}": ">=${fabric_api_version}"
   }
-} 
+}

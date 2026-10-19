@@ -1,6 +1,7 @@
 package com.linguachat.mixin.client;
 
 import com.linguachat.LinguaChatMod;
+import com.linguachat.compat.I18nCompat;
 import com.linguachat.compat.ScreenCompat;
 import com.linguachat.compat.TextCompat;
 import com.linguachat.config.ModConfig;
@@ -35,7 +36,7 @@ public abstract class ChatScreenMixin {
 
     @Inject(method = "init", at = @At("TAIL"))
     private void onInit(CallbackInfo ci) {
-        LinguaChatMod.LOGGER.info("ChatScreen initialized");
+        debugLog("linguachat.log.debug.chat_screen_initialized");
     }
 
     //? if >=1.19 {
@@ -67,11 +68,11 @@ public abstract class ChatScreenMixin {
             String playerName = MinecraftClient.getInstance().getSession().getUsername();
             String originalMessage = chatText;
             
-            LinguaChatMod.LOGGER.info("Original message: " + originalMessage);
+            debugLog("linguachat.log.debug.original_message", originalMessage);
             
             // Avoid retranslating if we just sent this
             if (MessageStore.wasMessageRecentlyProcessed(playerName, originalMessage)) {
-                LinguaChatMod.LOGGER.info("Message already processed, sending without retranslation");
+                debugLog("linguachat.log.debug.send_raw_recently_processed");
                 sendChatMessageDirectly(originalMessage);
                 MinecraftClient.getInstance().execute(() -> {
                     closeScreenSafely(thisChatScreen);
@@ -94,22 +95,29 @@ public abstract class ChatScreenMixin {
                 TranslationDirection.CLIENT_TO_SERVER,
                 translatedText -> {
                     try {
+                        // null = translation failed, error already shown - do NOT send the original
+                        if (translatedText == null) {
+                            MessageStore.unmarkMessageAsProcessed(playerName, originalMessage);
+                            debugLog("linguachat.log.debug.outgoing_not_sent", originalMessage);
+                            return;
+                        }
+
                         String translatedString = translatedText.getString();
-                        
-                        if (translatedText != null && !translatedString.equals(originalMessage)) {
+
+                        if (!translatedString.equals(originalMessage)) {
                             MessageStore.markMessageAsProcessed(playerName, translatedString);
                             MessageStore.linkMessages(playerName, originalMessage, translatedString);
                             
-                            LinguaChatMod.LOGGER.info("Translated outgoing message: " + translatedString);
+                            debugLog("linguachat.log.debug.outgoing_translated", translatedString);
                             
                             MinecraftClient.getInstance().execute(() -> {
                                 if (ModConfig.get().isShowOriginalOnHover()) {
-                                    LinguaChatMod.LOGGER.info("Original text '" + originalMessage + "' saved for hover effect");
+                                    debugLog("linguachat.log.debug.original_saved_hover", originalMessage);
                                 }
                                 sendChatMessageDirectly(translatedString);
                             });
                         } else {
-                            LinguaChatMod.LOGGER.info("Translation didn't change message, sending original: " + originalMessage);
+                            debugLog("linguachat.log.debug.no_change_send_original", originalMessage);
                             MinecraftClient.getInstance().execute(() -> {
                                 sendChatMessageDirectly(originalMessage);
                             });
@@ -133,21 +141,21 @@ public abstract class ChatScreenMixin {
             //? if >=1.20 {
             if (MinecraftClient.getInstance().getNetworkHandler() != null) {
                 MinecraftClient.getInstance().getNetworkHandler().sendChatMessage(message);
-                LinguaChatMod.LOGGER.info("Message sent directly: " + message);
+                debugLog("linguachat.log.debug.sent_directly", message);
             } else {
                 LinguaChatMod.LOGGER.error("Failed to send message, network handler unavailable");
             }
             //?} else if >=1.19 {
             /*if (MinecraftClient.getInstance().player != null) {
                 MinecraftClient.getInstance().player.sendChatMessage(message, TextCompat.literal(message));
-                LinguaChatMod.LOGGER.info("Message sent directly: " + message);
+                debugLog("linguachat.log.debug.sent_directly", message);
             } else {
                 LinguaChatMod.LOGGER.error("Failed to send message, player unavailable");
             }
             *///?} else {
             /*if (MinecraftClient.getInstance().player != null) {
                 MinecraftClient.getInstance().player.sendChatMessage(message);
-                LinguaChatMod.LOGGER.info("Message sent directly: " + message);
+                debugLog("linguachat.log.debug.sent_directly", message);
             } else {
                 LinguaChatMod.LOGGER.error("Failed to send message, player unavailable");
             }
@@ -164,9 +172,9 @@ public abstract class ChatScreenMixin {
             MinecraftClient client = MinecraftClient.getInstance();
             if (client.currentScreen == targetScreen) {
                 ScreenCompat.setScreen(client, null);
-                LinguaChatMod.LOGGER.info("Chat screen closed");
+                debugLog("linguachat.log.debug.chat_screen_closed");
             } else {
-                LinguaChatMod.LOGGER.info("Chat screen already changed, not closing");
+                debugLog("linguachat.log.debug.chat_screen_not_closed");
             }
         } catch (Exception e) {
             LinguaChatMod.LOGGER.error("Error closing chat screen", e);
@@ -177,7 +185,7 @@ public abstract class ChatScreenMixin {
     private static void closeScreen() {
         try {
             ScreenCompat.setScreen(MinecraftClient.getInstance(), null);
-            LinguaChatMod.LOGGER.info("Chat screen closed");
+            debugLog("linguachat.log.debug.chat_screen_closed");
         } catch (Exception e) {
             LinguaChatMod.LOGGER.error("Error closing chat screen", e);
         }
@@ -188,4 +196,11 @@ public abstract class ChatScreenMixin {
         String key = MessageStore.createMessageKey(playerName, translatedMessage);
         return MessageStore.getOriginalMessage(key);
     }
-} 
+
+    @Unique
+    private static void debugLog(String key, Object... args) {
+        if (ModConfig.get().isDebugMode()) {
+            LinguaChatMod.LOGGER.info(I18nCompat.translate(key, args));
+        }
+    }
+}

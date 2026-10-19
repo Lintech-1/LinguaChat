@@ -7,15 +7,10 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public class ConfigValidator {
-    // ISO 639-1 codes + common regional variants
-    private static final Set<String> VALID_LANGUAGE_CODES = new HashSet<>(Arrays.asList(
-        "auto", "en", "ru", "de", "fr", "es", "it", "ja", "zh", "ko", "pt", "ar", "hi", "tr",
-        "pl", "nl", "sv", "da", "fi", "no", "cs", "sk", "hu", "ro", "bg", "uk", "el", "he",
-        "th", "vi", "id", "ms", "tl", "bn", "ta", "te", "mr", "ur", "fa", "sw", "am", "ne",
-        "en-US", "en-GB", "pt-BR", "pt-PT", "zh-CN", "zh-TW"
-    ));
+    private static final Pattern LANGUAGE_CODE_PATTERN = Pattern.compile("^[a-z]{2,3}(-[a-z0-9]{2,8})?$");
 
     private static final Set<String> VALID_TRANSLATORS = new HashSet<>(Arrays.asList(
         "google", "deepl", "kagi"
@@ -83,21 +78,10 @@ public class ConfigValidator {
             return;
         }
 
-        String normalized = code.toLowerCase().trim();
-        if (!VALID_LANGUAGE_CODES.contains(normalized)) {
-            // Try base code (first 2 chars) before failing
-            if (normalized.length() >= 2) {
-                String baseCode = normalized.substring(0, 2);
-                if (VALID_LANGUAGE_CODES.contains(baseCode)) {
-                    result.addWarning(String.format(
-                        "Language code '%s' in field %s is non-standard, but base code '%s' is valid",
-                        code, fieldName, baseCode
-                    ));
-                    return;
-                }
-            }
+        String normalized = code.trim().replace('_', '-').toLowerCase();
+        if (!"auto".equals(normalized) && !LANGUAGE_CODE_PATTERN.matcher(normalized).matches()) {
             result.addWarning(String.format(
-                "Language code '%s' in field %s is not recognized (ISO 639-1)",
+                "Language code '%s' in field %s does not look like an ISO-639 code",
                 code, fieldName
             ));
         }
@@ -178,25 +162,25 @@ public class ConfigValidator {
      */
     public static void logValidationResults(ValidationResult result) {
         if (result.hasErrors()) {
-            LinguaChatMod.LOGGER.error(com.linguachat.compat.I18nCompat.translate("linguachat.log.validation_errors_header"));
+            LinguaChatMod.LOGGER.error(ModConfig.logText("linguachat.log.validation_errors_header"));
             for (String error : result.getErrors()) {
-                LinguaChatMod.LOGGER.error(com.linguachat.compat.I18nCompat.translate("linguachat.log.validation_error_item", error));
+                LinguaChatMod.LOGGER.error(ModConfig.logText("linguachat.log.validation_error_item", error));
             }
         }
 
         if (result.hasWarnings()) {
-            LinguaChatMod.LOGGER.warn(com.linguachat.compat.I18nCompat.translate("linguachat.log.validation_warnings_header"));
+            LinguaChatMod.LOGGER.warn(ModConfig.logText("linguachat.log.validation_warnings_header"));
             for (String warning : result.getWarnings()) {
-                LinguaChatMod.LOGGER.warn(com.linguachat.compat.I18nCompat.translate("linguachat.log.validation_warning_item", warning));
+                LinguaChatMod.LOGGER.warn(ModConfig.logText("linguachat.log.validation_warning_item", warning));
             }
         }
 
         if (result.isConfigModified()) {
-            LinguaChatMod.LOGGER.info(com.linguachat.compat.I18nCompat.translate("linguachat.log.config_auto_corrected"));
+            LinguaChatMod.LOGGER.info(ModConfig.logText("linguachat.log.config_auto_corrected"));
         }
 
         if (!result.hasErrors() && !result.hasWarnings()) {
-            LinguaChatMod.LOGGER.info(com.linguachat.compat.I18nCompat.translate("linguachat.log.config_valid"));
+            LinguaChatMod.LOGGER.info(ModConfig.logText("linguachat.log.config_valid"));
         }
     }
 }

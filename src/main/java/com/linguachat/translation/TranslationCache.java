@@ -1,5 +1,7 @@
 package com.linguachat.translation;
 
+import com.linguachat.config.ModConfig;
+
 import net.minecraft.text.Text;
 
 import java.util.HashMap;
@@ -9,11 +11,11 @@ import java.util.Map;
  * Cache for translated messages
  */
 public class TranslationCache {
-    private static final int MAX_CACHE_SIZE = 512;
+    private static final int DEFAULT_MAX_CACHE_SIZE = 512;
     
     // Use regular HashMap instead of LinkedHashMap with LRU
-    private static final Map<CacheKey, Text> cache = new HashMap<>(MAX_CACHE_SIZE);
-    private static final Map<CacheKey, Long> accessTimes = new HashMap<>(MAX_CACHE_SIZE);
+    private static final Map<CacheKey, Text> cache = new HashMap<>(DEFAULT_MAX_CACHE_SIZE);
+    private static final Map<CacheKey, Long> accessTimes = new HashMap<>(DEFAULT_MAX_CACHE_SIZE);
     
     // Cache with locking for thread safety
     private static final Object cacheLock = new Object();
@@ -71,14 +73,22 @@ public class TranslationCache {
     public static void put(Text original, Text translated, TranslationDirection direction) {
         synchronized (cacheLock) {
             CacheKey key = new CacheKey(original, direction);
+            int maxCacheSize = getMaxCacheSize();
             
-            // If max cache size is reached, remove oldest entry
-            if (cache.size() >= MAX_CACHE_SIZE && !cache.containsKey(key)) {
+            while (cache.size() >= maxCacheSize && !cache.containsKey(key) && !accessTimes.isEmpty()) {
                 removeOldestEntry();
             }
             
             cache.put(key, translated);
             accessTimes.put(key, System.currentTimeMillis());
+        }
+    }
+
+    private static int getMaxCacheSize() {
+        try {
+            return Math.max(1, ModConfig.get().getCacheSize());
+        } catch (Exception e) {
+            return DEFAULT_MAX_CACHE_SIZE;
         }
     }
     
@@ -122,4 +132,4 @@ public class TranslationCache {
             return cache.size();
         }
     }
-} 
+}

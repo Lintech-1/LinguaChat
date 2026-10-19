@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -112,40 +113,13 @@ public class TranslationManager implements Closeable {
     /**
      * Attempts to translate text using provider chain with fallback
      */
-    private String translateWithFallback(String text, String sourceLang, String targetLang) {
+    private String translateWithFallback(String text, String sourceLang, String targetLang) throws TranslationException {
         List<TranslationProvider> providers = buildProviderChain();
         
-        String translatedResult = null;
         for (int i = 0; i < providers.size(); i++) {
             TranslationProvider provider = providers.get(i);
             try {
-                translatedResult = provider.translate(text, sourceLang, targetLang);
-                
-                // workaround: if auto-detect returns same text (wrong lang guess), retry with English
-                if ("auto".equals(sourceLang) && 
-                    translatedResult.equals(text) && 
-                    !"en".equals(targetLang) && 
-                    text.trim().length() > 0) {
-                    
-                        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.language_match_detected", targetLang));
-                        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.retry_english"));
-                        
-                        try {
-                            String englishTranslation = provider.translate(text, sourceLang, "en");
-                            
-                            // make sure English fallback actually translated something
-                            if (!englishTranslation.equals(text) && !englishTranslation.equals(translatedResult)) {
-                                LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.fallback_english_success", text, englishTranslation));
-                                return englishTranslation;
-                            } else {
-                                LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.english_no_change"));
-                            }
-                        } catch (TranslationException retryException) {
-                            LinguaChatMod.LOGGER.warn(I18nCompat.translate("linguachat.log.retry_english_error", retryException.getMessage()));
-                        }
-                }
-                
-                return translatedResult;
+                return provider.translate(text, sourceLang, targetLang);
             } catch (TranslationException e) {
                 TranslationLogger.logProviderError(
                     provider.getProviderName(),
@@ -165,9 +139,12 @@ public class TranslationManager implements Closeable {
             }
         }
         
-        // If all providers failed, return original text
+        // All providers failed - caller decides how to degrade
         LinguaChatMod.LOGGER.warn(I18nCompat.translate("linguachat.log.all_providers_failed"));
-        return text;
+        throw new TranslationException(
+            TranslationException.ErrorType.NETWORK_ERROR,
+            "All translation providers failed"
+        );
     }
 
     public String normalizeLanguageCode(String lang) {
@@ -248,42 +225,68 @@ public class TranslationManager implements Closeable {
             return;
         }
         
-        // dedupe: don't translate same message twice if already pending
-        String cacheKey = content + "_" + direction.getSourceLang() + "_" + direction.getTargetLang();
-        CompletableFuture<String> existingTranslation = activeTranslations.get(cacheKey);
-        
-        if (existingTranslation != null && !existingTranslation.isDone()) {
-            // piggyback on existing translation task
-            existingTranslation.thenAcceptAsync(translatedContent -> {
-                Text translatedText = createTranslatedText(text, translatedContent);
-                TranslationCache.put(text, translatedText, direction);
-                callback.accept(translatedText);
-            }, MinecraftClient.getInstance()::execute);
-            return;
-        }
-        
-        CompletableFuture<String> translationFuture = CompletableFuture.supplyAsync(() -> {
-            String sourceLang = direction.getSourceLang();
-            String targetLang = direction.getTargetLang();
-            
-            // try providers in order until one succeeds
-            return translateWithFallback(content, sourceLang, targetLang);
-        }, translationExecutor);
-        
-        activeTranslations.put(cacheKey, translationFuture);
+        String sourceLang = direction.getSourceLang();
+        String targetLang = direction.getTargetLang();
+        String cacheKey = content + "_" + sourceLang + "_" + targetLang;
+        CompletableFuture<String> translationFuture = activeTranslations.compute(cacheKey, (key, existing) -> {
+            if (existing != null && !existing.isDone()) {
+                return existing;
+            }
+
+            return CompletableFuture.supplyAsync(() -> {
+                try {
+                    return translateWithFallback(content, sourceLang, targetLang);
+                } catch (TranslationException e) {
+                    throw new CompletionException(e);
+                }
+            }, translationExecutor);
+        });
         
         translationFuture.thenAcceptAsync(translatedContent -> {
             Text translatedText = createTranslatedText(text, translatedContent);
             TranslationCache.put(text, translatedText, direction);
             callback.accept(translatedText);
-            activeTranslations.remove(cacheKey);
+            activeTranslations.remove(cacheKey, translationFuture);
         }, MinecraftClient.getInstance()::execute)
         .exceptionally(e -> {
-            LinguaChatMod.LOGGER.error(I18nCompat.translate("linguachat.log.translation_processing_error", e.getMessage()));
-            callback.accept(text);
-            activeTranslations.remove(cacheKey);
+            // unwrap to the root cause so the user sees the real error, not CompletionException
+            Throwable unwrapped = e;
+            while (unwrapped.getCause() != null && unwrapped.getCause() != unwrapped) {
+                unwrapped = unwrapped.getCause();
+            }
+            final Throwable cause = unwrapped;
+            LinguaChatMod.LOGGER.error(I18nCompat.translate("linguachat.log.translation_processing_error", cause.getMessage()));
+            // failure path runs on executor thread - callback may touch chat HUD, keep it on main
+            MinecraftClient.getInstance().execute(() -> {
+                showTranslationError(direction, cause.getMessage());
+                // outgoing: callback gets null = do NOT send the untranslated original;
+                // incoming: fall back to the original so the message isn't lost
+                callback.accept(direction == TranslationDirection.CLIENT_TO_SERVER ? null : text);
+            });
+            activeTranslations.remove(cacheKey, translationFuture);
             return null;
         });
+    }
+
+    // Client-only: error is added directly to the chat HUD, so it can't reach other players
+    private static volatile long lastErrorShownAt = 0;
+
+    private void showTranslationError(TranslationDirection direction, String reason) {
+        // outgoing errors are user-initiated - always show; incoming throttled against chat spam
+        boolean outgoing = direction == TranslationDirection.CLIENT_TO_SERVER;
+        long now = System.currentTimeMillis();
+        if (!outgoing && now - lastErrorShownAt < 10_000) {
+            return;
+        }
+        lastErrorShownAt = now;
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.player != null) {
+            // direct add - sendMessage routes through MessageHandler where our own mixin would translate this
+            String key = outgoing ? "linguachat.error.outgoing_failed" : "linguachat.error.translation_failed";
+            client.inGameHud.getChatHud().addMessage(
+                TextCompat.literal(I18nCompat.translate(key, reason))
+            );
+        }
     }
     
     private Text createTranslatedText(Text original, String translatedContent) {
@@ -300,7 +303,8 @@ public class TranslationManager implements Closeable {
                     TextCompat.literal(I18nCompat.translate("linguachat.hover.original", originalContent))
                 );
                 
-                return translatedText.styled(style -> style.withHoverEvent(hoverEvent));
+                // keep original root style (click events, color) and add hover on top
+                return translatedText.styled(style -> original.getStyle().withHoverEvent(hoverEvent));
             }
         }
         
@@ -325,4 +329,4 @@ public class TranslationManager implements Closeable {
             translationExecutor.shutdown();
         }
     }
-} 
+}

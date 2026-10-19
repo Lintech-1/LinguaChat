@@ -1,7 +1,9 @@
 package com.linguachat.translation.providers;
 
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonParseException;
+import com.linguachat.LinguaChatMod;
 import com.linguachat.config.ModConfig;
 import com.linguachat.translation.TranslationLogger;
 
@@ -20,26 +22,49 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 //?}
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Kagi Translate provider (needs API key or session token)
  */
 public class KagiTranslateClient implements TranslationProvider {
     private static final String KAGI_TRANSLATE_URL = "https://translate.kagi.com/api/translate";
+    // users paste the whole magic-link URL "https://kagi.com/search?token=..." - grab the token out of it
+    private static final Pattern SESSION_TOKEN_IN_URL = Pattern.compile("token=([A-Za-z0-9_-]+)");
+
+    private String lastSessionToken = null;
+    private boolean disabled = false;
+
     //? if >=1.18 {
     private final HttpClient httpClient;
-    private boolean disabled = false;
 
     public KagiTranslateClient(HttpClient httpClient) {
         this.httpClient = httpClient;
     }
     //?} else {
-    /*private boolean disabled = false;
-
-    public KagiTranslateClient(Object unused) {
+    /*public KagiTranslateClient(Object unused) {
         // Java 8 doesn't need HttpClient
     }
     *///?}
+
+    private String extractSessionToken(String raw) {
+        if (raw == null) {
+            return "";
+        }
+        String trimmed = raw.trim();
+        Matcher matcher = SESSION_TOKEN_IN_URL.matcher(trimmed);
+        return matcher.find() ? matcher.group(1) : trimmed;
+    }
+
+    private String sessionCookieFor(String token) {
+        if (!token.equals(lastSessionToken)) {
+            // token changed (or first run) - give Kagi another chance after a previous 401/403
+            lastSessionToken = token;
+            disabled = false;
+        }
+        return token;
+    }
     
     @Override
     public String translate(String text, String sourceLang, String targetLang) throws TranslationException {
@@ -54,12 +79,15 @@ public class KagiTranslateClient implements TranslationProvider {
 
         ModConfig config = ModConfig.get();
 
-        String requestBody = String.format(
-            "{\"text\":\"%s\",\"from\":\"%s\",\"to\":\"%s\",\"model\":\"standard\"}",
-            text.replace("\"", "\\\"").replace("\n", "\\n"),
-            sourceLang,
-            targetLang
-        );
+        String sessionToken = extractSessionToken(config.getKagiSessionToken());
+        String sessionCookie = sessionCookieFor(sessionToken);
+
+        JsonObject requestJson = new JsonObject();
+        requestJson.addProperty("text", text);
+        requestJson.addProperty("from", sourceLang);
+        requestJson.addProperty("to", targetLang);
+        requestJson.addProperty("model", "standard");
+        String requestBody = requestJson.toString();
 
         TranslationLogger.logRequestPayload(getProviderName(), requestBody);
 
@@ -74,11 +102,10 @@ public class KagiTranslateClient implements TranslationProvider {
             connection.setRequestProperty("Content-Type", "application/json");
             connection.setRequestProperty("User-Agent", "LinguaChat-Minecraft-Mod/1.0");
 
-            String sessionToken = config.getKagiSessionToken();
             String apiKey = config.getKagiApiKey();
 
-            if (sessionToken != null && !sessionToken.isEmpty()) {
-                connection.setRequestProperty("Cookie", "kagi_session=" + sessionToken);
+            if (!sessionToken.isEmpty()) {
+                connection.setRequestProperty("Cookie", "kagi_session=" + sessionCookie);
             } else if (apiKey != null && !apiKey.isEmpty()) {
                 connection.setRequestProperty("Authorization", "Bot " + apiKey);
             } else {
@@ -111,9 +138,14 @@ public class KagiTranslateClient implements TranslationProvider {
 
             if (statusCode == 401 || statusCode == 403) {
                 disabled = true;
+                // session LINKS (kagi.com/search?token=...) require interactive browser login and
+                // can't authorize the API - the user needs the kagi_session cookie value or an API token
+                String hint = responseBodyStr.contains("login_required")
+                    ? " Paste the kagi_session cookie value from your browser (DevTools) or use an API token."
+                    : "";
                 throw new TranslationException(
                     TranslationException.ErrorType.AUTHENTICATION_ERROR,
-                    "Authentication error (code " + statusCode + "). Kagi disabled for this session."
+                    "Authentication error (code " + statusCode + "). Kagi disabled for this session." + hint
                 );
             }
 
@@ -147,7 +179,13 @@ public class KagiTranslateClient implements TranslationProvider {
                 );
             }
 
-            com.google.gson.JsonObject jsonResponse = new JsonParser().parse(responseBodyStr).getAsJsonObject();
+            JsonObject jsonResponse = new JsonParser().parse(responseBodyStr).getAsJsonObject();
+            if (!jsonResponse.has("translation") || jsonResponse.get("translation").isJsonNull()) {
+                throw new TranslationException(
+                    TranslationException.ErrorType.PARSE_ERROR,
+                    "Missing translation field in Kagi response"
+                );
+            }
             String translatedText = jsonResponse.get("translation").getAsString();
 
             TranslationLogger.logTranslationResponse(getProviderName(), text, translatedText);
@@ -161,11 +199,10 @@ public class KagiTranslateClient implements TranslationProvider {
                 .header("User-Agent", "LinguaChat-Minecraft-Mod/1.0")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody));
 
-            String sessionToken = config.getKagiSessionToken();
             String apiKey = config.getKagiApiKey();
 
-            if (sessionToken != null && !sessionToken.isEmpty()) {
-                requestBuilder.header("Cookie", "kagi_session=" + sessionToken);
+            if (!sessionToken.isEmpty()) {
+                requestBuilder.header("Cookie", "kagi_session=" + sessionCookie);
             } else if (apiKey != null && !apiKey.isEmpty()) {
                 requestBuilder.header("Authorization", "Bot " + apiKey);
             } else {
@@ -182,9 +219,14 @@ public class KagiTranslateClient implements TranslationProvider {
 
             if (response.statusCode() == 401 || response.statusCode() == 403) {
                 disabled = true;
+                // session LINKS (kagi.com/search?token=...) require interactive browser login and
+                // can't authorize the API - the user needs the kagi_session cookie value or an API token
+                String hint = response.body() != null && response.body().contains("login_required")
+                    ? " Paste the kagi_session cookie value from your browser (DevTools) or use an API token."
+                    : "";
                 throw new TranslationException(
                     TranslationException.ErrorType.AUTHENTICATION_ERROR,
-                    "Authentication error (code " + response.statusCode() + "). Kagi disabled for this session."
+                    "Authentication error (code " + response.statusCode() + "). Kagi disabled for this session." + hint
                 );
             }
 
@@ -218,7 +260,13 @@ public class KagiTranslateClient implements TranslationProvider {
                 );
             }
 
-            com.google.gson.JsonObject jsonResponse = JsonParser.parseString(response.body()).getAsJsonObject();
+            JsonObject jsonResponse = JsonParser.parseString(response.body()).getAsJsonObject();
+            if (!jsonResponse.has("translation") || jsonResponse.get("translation").isJsonNull()) {
+                throw new TranslationException(
+                    TranslationException.ErrorType.PARSE_ERROR,
+                    "Missing translation field in Kagi response"
+                );
+            }
             String translatedText = jsonResponse.get("translation").getAsString();
 
             TranslationLogger.logTranslationResponse(getProviderName(), text, translatedText);
@@ -229,6 +277,12 @@ public class KagiTranslateClient implements TranslationProvider {
             throw new TranslationException(
                 TranslationException.ErrorType.PARSE_ERROR,
                 "Error parsing response: " + e.getMessage(),
+                e
+            );
+        } catch (IllegalStateException | NullPointerException e) {
+            throw new TranslationException(
+                TranslationException.ErrorType.PARSE_ERROR,
+                "Unexpected response format: " + e.getMessage(),
                 e
             );
         } catch (IOException e) {

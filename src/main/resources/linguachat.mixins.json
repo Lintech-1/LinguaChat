@@ -4,11 +4,9 @@
   "package": "com.linguachat.mixin",
   "compatibilityLevel": "${mixin_java_level}",
   "client": [
-    "client.ChatScreenMixin",
-    "client.ChatHudMixin",
-    "client.ClientPlayNetworkHandlerMixin"${message_handler_mixin}
+    "client.ChatScreenMixin"${client_play_network_handler_mixin}${message_handler_mixin}
   ],
   "injectors": {
     "defaultRequire": 1
   }
-} 
+}

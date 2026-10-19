@@ -72,11 +72,6 @@
   "linguachat.log.sender_key_not_determined": "Sender key not determined",
 
   "linguachat.log.reinit_thread_pool": "Reinitializing thread pool for translation",
-  "linguachat.log.language_match_detected": "Detected language match: text didn't change when translating to %s",
-  "linguachat.log.retry_english": "Retrying translation to English as fallback",
-  "linguachat.log.fallback_english_success": "Successful fallback translation to English: '%s' -> '%s'",
-  "linguachat.log.english_no_change": "English translation also didn't change text, returning original",
-  "linguachat.log.retry_english_error": "Error during retry translation to English: %s",
   "linguachat.log.all_providers_failed": "All translation providers failed, returning original text",
   "linguachat.log.translation_error": "Error during translation: %s",
   "linguachat.log.translation_processing_error": "Error during translation processing: %s",
@@ -116,9 +111,27 @@
   "linguachat.log.debug.intercept_overlay": "=== INTERCEPT InGameHud.setOverlayMessage ===",
   "linguachat.log.debug.translating_message": "Translating message: %s",
   "linguachat.log.debug.translating_message_meta": "Translating message with metadata: %s",
+  "linguachat.log.debug.chat_screen_initialized": "ChatScreen initialized",
+  "linguachat.log.debug.original_message": "Original message: %s",
+  "linguachat.log.debug.send_raw_recently_processed": "Message already processed, sending without retranslation",
+  "linguachat.log.debug.outgoing_not_sent": "Translation failed, message not sent: %s",
+  "linguachat.log.debug.outgoing_translated": "Translated outgoing message: %s",
+  "linguachat.log.debug.original_saved_hover": "Original text '%s' saved for hover effect",
+  "linguachat.log.debug.no_change_send_original": "Translation didn't change message, sending original: %s",
+  "linguachat.log.debug.sent_directly": "Message sent directly: %s",
+  "linguachat.log.debug.chat_screen_closed": "Chat screen closed",
+  "linguachat.log.debug.chat_screen_not_closed": "Chat screen already changed, not closing",
+  "linguachat.log.debug.message_stored": "MessageStore: stored [%s -> %s]",
+  "linguachat.log.client_init": "Initializing LinguaChat client",
+  "linguachat.log.client_init_done": "LinguaChat client initialized",
+  "linguachat.log.creating_manager": "Creating new TranslationManager instance",
+  "linguachat.log.initialized": "LinguaChat initialized successfully",
 
   "linguachat.hover.original": "Original: %s",
 
   "linguachat.feedback.outbound_enabled": "§a[LinguaChat] Outgoing translation enabled",
-  "linguachat.feedback.outbound_disabled": "§c[LinguaChat] Outgoing translation disabled"
+  "linguachat.feedback.outbound_disabled": "§c[LinguaChat] Outgoing translation disabled",
+
+  "linguachat.error.translation_failed": "§c[LinguaChat] Translation failed: %s. Showing original message.",
+  "linguachat.error.outgoing_failed": "§c[LinguaChat] Translation failed: %s. Message NOT sent. Press N to disable translation and send as-is."
 }

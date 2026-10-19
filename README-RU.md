@@ -107,8 +107,8 @@
 | `defaultTargetLang` | `"en"` | Язык для входящих сообщений |
 | `preferredTranslator` | `"google"` | Провайдер: `google`, `deepl`, `kagi` |
 | `deeplApiKey` | `""` | API ключ DeepL |
-| `kagiApiKey` | `""` | API токен Kagi |
-| `kagiSessionToken` | `""` | Session token Kagi |
+| `kagiApiKey` | `""` | API токен Kagi ([settings/api](https://kagi.com/settings/api)) |
+| `kagiSessionToken` | `""` | Значение куки `kagi_session` из залогиненного браузера (DevTools → Application → Cookies → kagi.com). Не вставляйте саму ссылку сессии — она не авторизует API. |
 | `showOriginalOnHover` | `true` | Показывать оригинал при наведении |
 | `cacheSize` | `512` | Размер кэша переводов |
 | `debugMode` | `false` | Отладочное логирование |
@@ -119,7 +119,7 @@
 |-----------|-----------|----------|-------|
 | **Google** | Бесплатно | Не требуется | 100+ |
 | **DeepL** | Free/Paid | [Требуется](https://www.deepl.com/pro-api) | 30+ |
-| **Kagi** | Kagi Pass | API токен ([settings/api](https://kagi.com/settings/api)) или Session token ([settings/user_details](https://kagi.com/settings/user_details)) | Множество |
+| **Kagi** | Kagi Pass | [API токен](https://kagi.com/settings/api) или **значение куки** `kagi_session` из DevTools. Сама ссылка сессии не работает (это OAuth-страница входа, а не токен). | Множество |
 
 ---
 
