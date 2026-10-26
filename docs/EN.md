@@ -24,7 +24,8 @@ LinguaChat/
 │   ├── 1.21.1/
 │   ├── 1.21.4/
 │   ├── 1.21.5/
-│   └── 1.21.11/
+│   ├── 1.21.11/
+│   └── 26.3/
 ├── src/                      # Shared source code (all versions)
 │   └── main/
 │       ├── java/com/linguachat/
@@ -64,8 +65,7 @@ LinguaChat/
 │       │   │   └── MessageStore.java
 │       │   ├── util/         # Utility classes
 │       │   │   └── MessageBlocker.java
-│       │   ├── version/      # Version utilities
-│       │   └── LinguaChatMod.java
+│       │       │   └── LinguaChatMod.java
 │       │   └── LinguaChatClient.java
 │       └── resources/
 │           ├── assets/linguachat/lang/
@@ -102,7 +102,7 @@ LinguaChat/
 ### How LinguaChat Uses Stonecutter
 
 The project supports **8 Minecraft versions** from a single source tree:
-- 1.16.5, 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.4, 1.21.5, 1.21.11
+- 1.16.5, 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.4, 1.21.5, 1.21.11, 26.3
 
 ### Stonecutter Directive Syntax
 
@@ -178,7 +178,7 @@ To switch the active version for IDE development:
 ./gradlew switchVersion -PtargetVersion=1.21.4
 ```
 
-Available versions: `1.16.5`, `1.18.2`, `1.19.2`, `1.20.1`, `1.21.1`, `1.21.4`, `1.21.5`, `1.21.11`
+Available versions: `1.16.5`, `1.18.2`, `1.19.2`, `1.20.1`, `1.21.1`, `1.21.4`, `1.21.5`, `1.21.11`, `26.3`
 
 After switching, refresh your IDE:
 - IntelliJ IDEA: File → Reload All Gradle Projects
@@ -320,7 +320,7 @@ cd LinguaChat
 
 Built JARs are located at:
 ```
-versions/<mc-version>/build/libs/linguachat-<mc-version>-2.0.0.jar
+versions/<mc-version>/build/libs/linguachat-<mc-version>-<mod-version>.jar
 ```
 
 ### Useful Gradle Flags

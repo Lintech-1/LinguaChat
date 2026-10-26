@@ -124,7 +124,6 @@ public class ModConfig {
 
     public void setDefaultSourceLang(String defaultSourceLang) {
         this.defaultSourceLang = defaultSourceLang;
-        save();
     }
 
     public String getDefaultTargetLang() {
@@ -133,7 +132,6 @@ public class ModConfig {
 
     public void setDefaultTargetLang(String defaultTargetLang) {
         this.defaultTargetLang = defaultTargetLang;
-        save();
     }
 
     public String getPreferredTranslator() {
@@ -151,7 +149,6 @@ public class ModConfig {
 
     public void setDeeplApiKey(String deeplApiKey) {
         this.deeplApiKey = deeplApiKey;
-        save();
     }
 
     public String getKagiApiKey() {
@@ -160,7 +157,6 @@ public class ModConfig {
 
     public void setKagiApiKey(String kagiApiKey) {
         this.kagiApiKey = kagiApiKey;
-        save();
     }
 
     public String getKagiSessionToken() {
@@ -169,7 +165,6 @@ public class ModConfig {
 
     public void setKagiSessionToken(String kagiSessionToken) {
         this.kagiSessionToken = kagiSessionToken;
-        save();
     }
 
     public boolean isShowOriginalOnHover() {
@@ -206,7 +201,6 @@ public class ModConfig {
     public void setCacheSize(int cacheSize) {
         // same bounds as ConfigValidator - GUI save path skips the startup validation
         this.cacheSize = Math.max(64, Math.min(4096, cacheSize));
-        save();
     }
 
     public boolean isDebugMode() {

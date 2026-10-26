@@ -12,7 +12,11 @@ public class ChatEvents {
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.server_connect", System.identityHashCode(handler)));
             LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.server_connection"));
-            LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.server_address", handler.getConnection().getAddress()));
+            //? if >=26.1 {
+        //LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.server_address", handler.getConnection().getRemoteAddress()));
+        //?} else {
+        LinguaChatMod.LOGGER.info(I18nCompat.translate("linguachat.log.server_address", handler.getConnection().getAddress()));
+        //?}
             TranslationCache.clear();
             MessageStore.clear();
             LinguaChatMod.getTranslationManager();

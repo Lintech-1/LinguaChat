@@ -1,10 +1,10 @@
 plugins {
-    id 'fabric-loom' version '1.14+'
+    id 'dev.kikugie.loom-back-compat'
     id 'dev.kikugie.stonecutter'
     id 'maven-publish'
 }
 
-version = '2.1.0'
+version = '3.0.0'
 group = 'com.linguachat'
 
 // Configure JAR naming with Minecraft version
@@ -26,7 +26,11 @@ dependencies {
     minecraft "com.mojang:minecraft:${sc.current.version}"
     
     // Yarn mappings based on Minecraft version
-    if (sc.current.parsed >= "1.21.11") {
+    if (sc.current.parsed >= "26.1") {
+        // unobfuscated: Mojang-named classes built in, no mappings needed
+        loomx.applyMojangMappings()
+        modImplementation "net.fabricmc.fabric-api:fabric-api:0.162.0+26.3"
+    } else if (sc.current.parsed >= "1.21.11") {
         mappings "net.fabricmc:yarn:1.21.11+build.1:v2"
         modImplementation "net.fabricmc.fabric-api:fabric-api:0.139.5+1.21.11"
     } else if (sc.current.parsed >= "1.21.5") {
@@ -49,10 +53,12 @@ dependencies {
         modImplementation "net.fabricmc.fabric-api:fabric-api:0.42.0+1.16"
     }
     
-    modImplementation "net.fabricmc:fabric-loader:0.16.10"
+    modImplementation "net.fabricmc:fabric-loader:${sc.current.parsed >= "26.1" ? "0.19.5" : "0.16.10"}"
     
     // Mod Menu for GUI settings - versions depend on Minecraft version
-    if (sc.current.parsed >= "1.21.11") {
+    if (sc.current.parsed >= "26.1") {
+        modImplementation "com.terraformersmc:modmenu:21.0.0"
+    } else if (sc.current.parsed >= "1.21.11") {
         modImplementation "com.terraformersmc:modmenu:17.0.0-beta.2"
     } else if (sc.current.parsed >= "1.21.5") {
         modImplementation "com.terraformersmc:modmenu:12.0.0"
@@ -71,17 +77,12 @@ dependencies {
     }
     
     // DeepL API Client
-    include 'com.deepl.api:deepl-java:1.9.0'
-    implementation 'com.deepl.api:deepl-java:1.9.0'
+    include 'com.deepl.api:deepl-java:1.17.0'
+    implementation 'com.deepl.api:deepl-java:1.17.0'
     
     // JSON handling
-    include 'com.google.code.gson:gson:2.10.1'
-    implementation 'com.google.code.gson:gson:2.10.1'
-    
-    // Testing dependencies
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
-    testImplementation 'net.jqwik:jqwik:1.8.2'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    include 'com.google.code.gson:gson:2.15.0'
+    implementation 'com.google.code.gson:gson:2.15.0'
 }
 
 processResources {
@@ -90,13 +91,16 @@ processResources {
     filteringCharset "UTF-8"
 
     // Determine required Java version based on Minecraft version
-    def javaVersion = sc.current.parsed >= "1.21" ? "21" : (sc.current.parsed >= "1.18" ? "17" : "8")
-    def mixinJavaLevel = sc.current.parsed >= "1.21" ? "JAVA_21" : (sc.current.parsed >= "1.18" ? "JAVA_17" : "JAVA_8")
+    def javaVersion = sc.current.parsed >= "26.1" ? "25" : (sc.current.parsed >= "1.21" ? "21" : (sc.current.parsed >= "1.18" ? "17" : "8"))
+    def mixinJavaLevel = sc.current.parsed >= "26.1" ? "JAVA_25" : (sc.current.parsed >= "1.21" ? "JAVA_21" : (sc.current.parsed >= "1.18" ? "JAVA_17" : "JAVA_8"))
     
     // Determine Fabric API version based on Minecraft version
     def fabricApiVersion
     def fabricApiModId
-    if (sc.current.parsed >= "1.21.4") {
+    if (sc.current.parsed >= "26.1") {
+        fabricApiVersion = "0.162.0+26.3"
+        fabricApiModId = "fabric-api"
+    } else if (sc.current.parsed >= "1.21.4") {
         fabricApiVersion = "0.99.5+1.21"
         fabricApiModId = "fabric-api"
     } else if (sc.current.parsed >= "1.21.1") {
@@ -118,13 +122,14 @@ processResources {
     
     // Incoming chat uses one owner per MC version to avoid double-processing.
     def clientPlayNetworkHandlerMixin = sc.current.parsed < "1.19" ? ',\n    "client.ClientPlayNetworkHandlerMixin"' : ''
-    def messageHandlerMixin = sc.current.parsed >= "1.19" ? ',\n    "client.MessageHandlerMixin"' : ''
+    def messageHandlerMixin = sc.current.parsed >= "26.1" ? ',\n    "client.ChatListenerMixin"' : (sc.current.parsed >= "1.19" ? ',\n    "client.MessageHandlerMixin"' : '')
+    def loaderVersion = sc.current.parsed >= "26.1" ? "0.19.5" : "0.16.10"
 
     filesMatching("fabric.mod.json") {
         expand(
             "version": project.version,
             "minecraft_version": stonecutter.current.version,
-            "loader_version": "0.16.10",
+            "loader_version": loaderVersion,
             "java_version": javaVersion,
             "fabric_api_version": fabricApiVersion,
             "fabric_api_mod_id": fabricApiModId
@@ -142,10 +147,18 @@ processResources {
 
 tasks.withType(JavaCompile).configureEach {
     it.options.encoding = "UTF-8"
-    
-    // Exclude MessageHandlerMixin for versions < 1.19
+
+    // Exclude version-specific mixins that can't compile against another mapping set
     if (sc.current.parsed < "1.19") {
         exclude '**/MessageHandlerMixin.java'
+    }
+    if (sc.current.parsed >= "26.1") {
+        // Yarn-named chat mixins: replaced by ChatListenerMixin for the unobfuscated branch
+        exclude '**/MessageHandlerMixin.java'
+        exclude '**/ClientPlayNetworkHandlerMixin.java'
+        exclude '**/ChatHudMixin.java'
+    } else {
+        exclude '**/ChatListenerMixin.java'
     }
 }
 
@@ -161,8 +174,8 @@ tasks.withType(Test).configureEach {
 
 // Configure Java toolchain
 java {
-    // Use Java 8 for 1.16.5, Java 17 for 1.18-1.20, Java 21 for 1.21+
-    def javaVersion = sc.current.parsed >= "1.21" ? 21 : (sc.current.parsed >= "1.18" ? 17 : 8)
+    // Use Java 8 for 1.16.5, Java 17 for 1.18-1.20, Java 21 for 1.21+, Java 25 for 26.x
+    def javaVersion = sc.current.parsed >= "26.1" ? 25 : (sc.current.parsed >= "1.21" ? 21 : (sc.current.parsed >= "1.18" ? 17 : 8))
     
     toolchain {
         languageVersion = JavaLanguageVersion.of(javaVersion)
@@ -177,3 +190,4 @@ jar {
         rename { "${it}_${base.archivesName.get()}"}
     }
 }
+

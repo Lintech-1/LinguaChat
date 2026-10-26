@@ -7,10 +7,16 @@ import com.linguachat.compat.TextCompat;
 import com.linguachat.config.ModConfig;
 import com.linguachat.translation.MessageStore;
 import com.linguachat.translation.TranslationDirection;
+//? if >=26.1 {
+/*import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.components.EditBox;
+*///?} else {
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.text.Text;
+//?}
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -21,6 +27,145 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /*import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 *///?}
 
+//? if >=26.1 {
+/*@Mixin(ChatScreen.class)
+public abstract class ChatScreenMixin {
+
+    @Shadow
+    protected EditBox input;
+
+    @Unique
+    private static volatile boolean IS_PROCESSING = false;
+
+    @Unique
+    private ChatScreen thisChatScreen = (ChatScreen)(Object)this;
+
+    @Inject(method = "init", at = @At("TAIL"))
+    private void onInit(CallbackInfo ci) {
+        debugLog("linguachat.log.debug.chat_screen_initialized");
+    }
+
+    @Inject(method = "handleChatInput", at = @At("HEAD"), cancellable = true)
+    private void onSendMessage(String chatText, boolean addToHistory, CallbackInfo ci) {
+        if (IS_PROCESSING || !ModConfig.get().isEnabled() || !ModConfig.get().isTranslateOutgoing() || chatText.startsWith("/")) {
+            return;
+        }
+
+        IS_PROCESSING = true;
+
+        try {
+            ci.cancel();
+
+            String playerName = Minecraft.getInstance().getUser().getName();
+            String originalMessage = chatText;
+
+            debugLog("linguachat.log.debug.original_message", originalMessage);
+
+            if (MessageStore.wasMessageRecentlyProcessed(playerName, originalMessage)) {
+                debugLog("linguachat.log.debug.send_raw_recently_processed");
+                sendChatMessageDirectly(originalMessage);
+                Minecraft.getInstance().execute(() -> {
+                    closeScreenSafely(thisChatScreen);
+                });
+                return;
+            }
+
+            MessageStore.markMessageAsProcessed(playerName, originalMessage);
+
+            String key = MessageStore.createMessageKey(playerName, originalMessage);
+            MessageStore.storeOriginalMessage(key, originalMessage);
+
+            Minecraft.getInstance().execute(() -> {
+                closeScreenSafely(thisChatScreen);
+            });
+
+            LinguaChatMod.getTranslationManager().translateAsync(
+                TextCompat.literal(originalMessage),
+                TranslationDirection.CLIENT_TO_SERVER,
+                translatedText -> {
+                    try {
+                        if (translatedText == null) {
+                            MessageStore.unmarkMessageAsProcessed(playerName, originalMessage);
+                            debugLog("linguachat.log.debug.outgoing_not_sent", originalMessage);
+                            return;
+                        }
+
+                        String translatedString = translatedText.getString();
+
+                        if (!translatedString.equals(originalMessage)) {
+                            MessageStore.markMessageAsProcessed(playerName, translatedString);
+                            MessageStore.linkMessages(playerName, originalMessage, translatedString);
+
+                            debugLog("linguachat.log.debug.outgoing_translated", translatedString);
+
+                            Minecraft.getInstance().execute(() -> {
+                                if (ModConfig.get().isShowOriginalOnHover()) {
+                                    debugLog("linguachat.log.debug.original_saved_hover", originalMessage);
+                                }
+                                sendChatMessageDirectly(translatedString);
+                            });
+                        } else {
+                            debugLog("linguachat.log.debug.no_change_send_original", originalMessage);
+                            Minecraft.getInstance().execute(() -> {
+                                sendChatMessageDirectly(originalMessage);
+                            });
+                        }
+                    } catch (Exception e) {
+                        LinguaChatMod.LOGGER.error("Error sending translated message", e);
+                        Minecraft.getInstance().execute(() -> {
+                            sendChatMessageDirectly(originalMessage);
+                        });
+                    }
+                }
+            );
+        } finally {
+            IS_PROCESSING = false;
+        }
+    }
+
+    @Unique
+    private static void sendChatMessageDirectly(String message) {
+        try {
+            if (Minecraft.getInstance().getConnection() != null) {
+                Minecraft.getInstance().getConnection().sendChat(message);
+                debugLog("linguachat.log.debug.sent_directly", message);
+            } else {
+                LinguaChatMod.LOGGER.error("Failed to send message, network handler unavailable");
+            }
+        } catch (Exception e) {
+            LinguaChatMod.LOGGER.error("Error during direct message send", e);
+        }
+    }
+
+    @Unique
+    private static void closeScreenSafely(ChatScreen targetScreen) {
+        try {
+            Minecraft client = Minecraft.getInstance();
+            if (client.gui.screen() == targetScreen) {
+                ScreenCompat.setScreen(client, null);
+                debugLog("linguachat.log.debug.chat_screen_closed");
+            } else {
+                debugLog("linguachat.log.debug.chat_screen_not_closed");
+            }
+        } catch (Exception e) {
+            LinguaChatMod.LOGGER.error("Error closing chat screen", e);
+        }
+    }
+
+    @Unique
+    private static String getOriginalMessage(String translatedMessage, String playerName) {
+        String key = MessageStore.createMessageKey(playerName, translatedMessage);
+        return MessageStore.getOriginalMessage(key);
+    }
+
+    @Unique
+    private static void debugLog(String key, Object... args) {
+        if (ModConfig.get().isDebugMode()) {
+            LinguaChatMod.LOGGER.info(I18nCompat.translate(key, args));
+        }
+    }
+}
+*///?} else {
 @Mixin(ChatScreen.class)
 public abstract class ChatScreenMixin {
 
@@ -204,3 +349,4 @@ public abstract class ChatScreenMixin {
         }
     }
 }
+//?}

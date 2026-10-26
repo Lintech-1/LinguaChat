@@ -22,7 +22,7 @@
 - [x] Original text available on hover
 - [x] Automatic language detection
 - [x] Full UI localization (English and Russian)
-- [x] Supports Minecraft 1.16.5 — 1.21.11
+- [x] Supports Minecraft 1.16.5 - 26.3
 
 ---
 
@@ -40,6 +40,7 @@
 | 1.21.4    | 21+  | 0.16.10+      | 0.99.5+    |
 | 1.21.5    | 21+  | 0.16.10+      | 0.122.0+   |
 | 1.21.11   | 21+  | 0.16.10+      | 0.139.5+   |
+| 26.3      | 25+  | 0.19.5+       | 0.162.0+   |
 
 ### Installation Steps
 
@@ -108,7 +109,7 @@ You can also edit the file directly: `config/linguachat.json`
 | `preferredTranslator` | `"google"` | Provider: `google`, `deepl`, `kagi` |
 | `deeplApiKey` | `""` | DeepL API key |
 | `kagiApiKey` | `""` | Kagi API token ([settings/api](https://kagi.com/settings/api)) |
-| `kagiSessionToken` | `""` | Value of the `kagi_session` cookie from your logged-in browser (DevTools → Application → Cookies → kagi.com). Do NOT paste the session link itself — it can't authorize the API. |
+| `kagiSessionToken` | `""` | Value of the `kagi_session` cookie from your logged-in browser (DevTools → Application → Cookies → translate.kagi.com). Do NOT paste the session link itself - it can't authorize the API. |
 | `showOriginalOnHover` | `true` | Show original on hover |
 | `cacheSize` | `512` | Translation cache size |
 | `debugMode` | `false` | Debug logging |
@@ -119,9 +120,23 @@ You can also edit the file directly: `config/linguachat.json`
 |----------|------|---------|-----------|
 | **Google** | Free | Not required | 100+ |
 | **DeepL** | Free/Paid | [Get API Key](https://www.deepl.com/pro-api) | 30+ |
-| **Kagi** | Kagi Pass | [API Token](https://kagi.com/settings/api), or the `kagi_session` **cookie value** from DevTools. The session link itself does not work (it's an OAuth login page, not a token). | Multiple |
+| **Kagi** | Kagi Pass | [API Token](https://kagi.com/settings/api), or the `kagi_session` cookie - [how to get it](#kagi-session-cookie) | Multiple |
 
 ---
+
+### Kagi Session Cookie
+
+If you don't have an API token, the mod can authenticate with your Kagi session cookie:
+
+1. Open [translate.kagi.com](https://translate.kagi.com/) in your browser and log in
+2. Press **F12** to open DevTools
+3. Go to **Application** tab → **Cookies** → `https://translate.kagi.com` (in Firefox: **Storage** → **Cookies**)
+4. Find the `kagi_session` row and copy its **Value** - a long opaque string
+5. Paste that value into the **Session Token** field in the mod settings
+
+> [!WARNING]
+> The cookie grants access to your Kagi account - keep it private and never share it.
+> Don't paste the page URL from the address bar instead: the session lives in the cookie, not in the link.
 
 ## 🐛 Reporting Issues
 

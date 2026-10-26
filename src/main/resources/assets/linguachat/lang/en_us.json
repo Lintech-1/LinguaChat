@@ -2,7 +2,6 @@
   "key.linguachat.toggle_outbound": "Toggle Outbound Translation",
   "key.linguachat.open_config": "Open LinguaChat Config",
   "category.linguachat": "LinguaChat",
-  
   "linguachat.config.title": "LinguaChat Settings",
   "linguachat.config.enabled": "Mod: %s",
   "linguachat.config.enabled.on": "§aEnabled",
@@ -25,7 +24,6 @@
   "linguachat.config.save": "Save",
   "linguachat.config.cancel": "Cancel",
   "linguachat.config.google_notice": "Google does not require an API key",
-  
   "linguachat.log.init": "Initializing LinguaChat mod",
   "linguachat.log.ready": "LinguaChat ready to work!",
   "linguachat.log.shutdown": "Shutting down LinguaChat mod",
@@ -70,7 +68,6 @@
   "linguachat.log.sender_entry_not_determined": "Sender entry not determined",
   "linguachat.log.sender_key_saved": "Saved sender public key",
   "linguachat.log.sender_key_not_determined": "Sender key not determined",
-
   "linguachat.log.reinit_thread_pool": "Reinitializing thread pool for translation",
   "linguachat.log.all_providers_failed": "All translation providers failed, returning original text",
   "linguachat.log.translation_error": "Error during translation: %s",
@@ -78,7 +75,6 @@
   "linguachat.log.server_connection": "=== Server connection ===",
   "linguachat.log.server_address": "Server: %s",
   "linguachat.log.server_disconnection": "=== Server disconnection ===",
-
   "linguachat.log.debug.game_message": "=== ClientPlayNetworkHandlerMixin.onGameMessage ===",
   "linguachat.log.debug.network_message": "Network message: '%s'",
   "linguachat.log.debug.skip_system": "Skipping system message: %s",
@@ -92,7 +88,6 @@
   "linguachat.log.debug.translated_to": "Translated to %s: '%s'",
   "linguachat.log.debug.message_added": "Translated message added to chat",
   "linguachat.log.debug.composite_hover": "Created composite message with hover effect",
-
   "linguachat.log.debug.chathud_mixin_loaded": "ChatHudMixin loaded",
   "linguachat.log.debug.chathud_add_message": "ChatHudMixin.onAddMessage: '%s'",
   "linguachat.log.debug.translated_skip": "This is a translated message, skipping",
@@ -126,12 +121,20 @@
   "linguachat.log.client_init_done": "LinguaChat client initialized",
   "linguachat.log.creating_manager": "Creating new TranslationManager instance",
   "linguachat.log.initialized": "LinguaChat initialized successfully",
-
   "linguachat.hover.original": "Original: %s",
-
   "linguachat.feedback.outbound_enabled": "§a[LinguaChat] Outgoing translation enabled",
   "linguachat.feedback.outbound_disabled": "§c[LinguaChat] Outgoing translation disabled",
-
   "linguachat.error.translation_failed": "§c[LinguaChat] Translation failed: %s. Showing original message.",
-  "linguachat.error.outgoing_failed": "§c[LinguaChat] Translation failed: %s. Message NOT sent. Press N to disable translation and send as-is."
+  "linguachat.error.outgoing_failed": "§c[LinguaChat] Translation failed: %s. Message NOT sent. Press N to disable translation and send as-is.",
+  "linguachat.log.method_called_26": "=== METHOD CALLED: ChatListener.showMessageToPlayer (26.x) ===",
+  "linguachat.log.debug.intercept_add_message_meta_26": "=== INTERCEPT ChatListener -> ChatComponent.addPlayerMessage with metadata ===",
+  "linguachat.log.debug.intercept_overlay_26": "=== INTERCEPT Hud.setOverlayMessage ===",
+  "linguachat.config.search": "Search",
+  "linguachat.error.type.AUTHENTICATION_ERROR": "authentication error (check your API key)",
+  "linguachat.error.type.RATE_LIMIT_ERROR": "rate limit exceeded, try again later",
+  "linguachat.error.type.NETWORK_ERROR": "network error",
+  "linguachat.error.type.PARSE_ERROR": "could not parse the provider response",
+  "linguachat.error.type.INVALID_LANGUAGE_CODE": "invalid language code",
+  "linguachat.error.type.SERVER_ERROR": "provider service error",
+  "linguachat.error.type.TIMEOUT_ERROR": "request timed out"
 }

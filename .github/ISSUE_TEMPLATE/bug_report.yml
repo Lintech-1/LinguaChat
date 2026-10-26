@@ -1,0 +1,112 @@
+name: Bug Report
+description: Report a translation error, crash, or unexpected behavior in LinguaChat
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report a bug in **LinguaChat**!
+        Please fill out this form as accurately as possible to help diagnose and resolve the issue.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Step-by-step instructions to reproduce the issue.
+      placeholder: |
+        1. Join a server (or open a singleplayer world) '...'
+        2. Set the translation provider to '...'
+        3. Receive a chat message in language '...'
+        4. See error / untranslated message / crash
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs Actual Behavior
+      description: What did you expect to happen vs what actually occurred?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mc_version
+    attributes:
+      label: Minecraft Version
+      description: Which supported Minecraft version are you playing on?
+      options:
+        - "1.16.5"
+        - "1.18.2"
+        - "1.19.2"
+        - "1.20.1"
+        - "1.21.1"
+        - "1.21.4"
+        - "1.21.5"
+        - "1.21.11"
+        - "26.3"
+    validations:
+      required: true
+
+  - type: input
+    id: mod_version
+    attributes:
+      label: LinguaChat Version
+      description: The version of the mod (see the Mods menu in-game or the jar file name).
+      placeholder: e.g. 1.2.3
+    validations:
+      required: true
+
+  - type: input
+    id: loader_version
+    attributes:
+      label: Fabric Loader Version
+      description: The version of Fabric Loader (shown in the Minecraft launcher profile).
+      placeholder: e.g. 0.16.14
+    validations:
+      required: true
+
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Translation Provider
+      description: Which translation provider were you using when the bug occurred?
+      options:
+        - Google
+        - DeepL
+        - Kagi
+    validations:
+      required: true
+
+  - type: textarea
+    id: game_log
+    attributes:
+      label: Game Log
+      description: Paste the relevant part of the latest.log (or attach the file by dragging it into this field). Logs are located in the 'logs' folder of your game directory.
+      render: text
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or Recordings
+      description: Drag and drop screenshots or video links showing the issue (e.g. the chat with the untranslated or garbled message).
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-flight Checklist
+      options:
+        - label: I have verified that the mod is the only translation mod installed (no conflicting chat mods).
+          required: true
+        - label: I have checked that this is not an API key / rate limit issue with my translation provider.
+          required: true
+        - label: I have searched existing issues and confirmed this is not a duplicate.
+          required: true

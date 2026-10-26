@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.0.0
+- Add Minecraft 26.3 support (unobfuscated, Mojang naming, Java 25): new ChatListenerMixin, Mojang variants of compat layers, config screen ported to the new render extraction API
+- Config screen: Source/Target language text fields replaced with searchable dropdowns (55 languages + auto for source); free-text codes from old configs still work and are shown as-is
+- Error notifications in chat now show a localized error type instead of the raw provider message (raw details remain in the game log only; notifications are still client-side only, never sent to the server)
+- Config auto-fix: language codes are normalized (trim/case/underscores) and API keys are trimmed on save; whitespace-only keys no longer pass as valid
+- Update bundled libraries: deepl-java 1.17.0, gson 2.15.0
+- All outgoing HTTP requests send a uniquely-identifying User-Agent (LinguaChat/<version> + repo link)
+- Fix screen flickering when opening/closing the config screen on 26.3: setScreenAndShow() forces an extra immediate render frame on every open/close; the mod now uses gui.setScreen() (same as the 26.1-era setScreen) — same root cause as the FreeCursor mod fixed on 26.2
+- Add GitHub issue templates (bug report with version/provider dropdowns, feature request)
+- Gradle runs without a lingering daemon (org.gradle.daemon=false) so builds don't hold RAM
+
 ## 2.1.0
 
 - Fix translation returning English instead of the configured target language when auto-detection finds the text already in the target language

@@ -1,6 +1,9 @@
 plugins {
     id "dev.kikugie.stonecutter"
 }
+// Active version = the ONLY version compiled straight from src/main/java (raw sources).
+// Raw sources are kept in Yarn (1.21.11) flavor; other versions get preprocessed generated sources.
+// Switching active to 26.3 would require flipping every >=26.1 swap in the sources - avoid.
 stonecutter.active "1.21.11"
 
 // Custom task to switch active version
@@ -11,11 +14,12 @@ rootProject.tasks.register("switchVersion") {
         def targetVersion = project.findProperty('targetVersion')
         if (targetVersion == null) {
             println "Usage: ./gradlew switchVersion -PtargetVersion=1.19.2"
-            println "Available versions: 1.16.5, 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.4, 1.21.5, 1.21.11"
+            println "Available versions: 1.16.5, 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.4, 1.21.5, 1.21.11, 26.3"
             return
         }
         
-        def validVersions = ["1.16.5", "1.18.2", "1.19.2", "1.20.1", "1.21.1", "1.21.4", "1.21.5", "1.21.11"]
+        // 26.3 is in the list for completeness, but switching to it breaks raw compilation (see the note above)
+        def validVersions = ["1.16.5", "1.18.2", "1.19.2", "1.20.1", "1.21.1", "1.21.4", "1.21.5", "1.21.11", "26.3"]
         if (!validVersions.contains(targetVersion)) {
             println "❌ Error: Version ${targetVersion} is not supported"
             println "Available versions: ${validVersions.join(', ')}"

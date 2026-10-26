@@ -24,7 +24,8 @@ LinguaChat/
 │   ├── 1.21.1/
 │   ├── 1.21.4/
 │   ├── 1.21.5/
-│   └── 1.21.11/
+│   ├── 1.21.11/
+│   └── 26.3/
 ├── src/                      # Общий исходный код (все версии)
 │   └── main/
 │       ├── java/com/linguachat/
@@ -64,8 +65,7 @@ LinguaChat/
 │       │   │   └── MessageStore.java
 │       │   ├── util/         # Утилиты
 │       │   │   └── MessageBlocker.java
-│       │   ├── version/      # Утилиты версий
-│       │   └── LinguaChatMod.java
+│       │       │   └── LinguaChatMod.java
 │       │   └── LinguaChatClient.java
 │       └── resources/
 │           ├── assets/linguachat/lang/
@@ -102,7 +102,7 @@ LinguaChat/
 ### Как LinguaChat использует Stonecutter
 
 Проект поддерживает **8 версий Minecraft** из одного дерева исходников:
-- 1.16.5, 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.4, 1.21.5, 1.21.11
+- 1.16.5, 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.4, 1.21.5, 1.21.11, 26.3
 
 ### Синтаксис директив Stonecutter
 
@@ -178,7 +178,7 @@ this.sourceLangField = new TextFieldWidget(this.textRenderer, fieldX, currentY, 
 ./gradlew switchVersion -PtargetVersion=1.21.4
 ```
 
-Доступные версии: `1.16.5`, `1.18.2`, `1.19.2`, `1.20.1`, `1.21.1`, `1.21.4`, `1.21.5`, `1.21.11`
+Доступные версии: `1.16.5`, `1.18.2`, `1.19.2`, `1.20.1`, `1.21.1`, `1.21.4`, `1.21.5`, `1.21.11`, `26.3`
 
 После переключения обновите IDE:
 - IntelliJ IDEA: File → Reload All Gradle Projects
@@ -320,7 +320,7 @@ cd LinguaChat
 
 JAR-файлы находятся по адресу:
 ```
-versions/<версия-mc>/build/libs/linguachat-<версия-mc>-2.0.0.jar
+versions/<версия-mc>/build/libs/linguachat-<версия-mc>-<версия-мода>.jar
 ```
 
 ### Полезные флаги Gradle

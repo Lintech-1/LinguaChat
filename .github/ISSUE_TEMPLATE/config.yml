@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Mod Page & Documentation
+    url: https://modrinth.com/mod/linguachat
+    about: Download LinguaChat and read the mod description and usage guide.
+  - name: 💬 Get Support
+    url: https://www.curseforge.com/minecraft/mc-mods/linguachat
+    about: Ask questions about setup and configuration on the CurseForge page.

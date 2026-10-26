@@ -100,7 +100,7 @@ public class KagiTranslateClient implements TranslationProvider {
             connection.setReadTimeout(30000);
             connection.setDoOutput(true);
             connection.setRequestProperty("Content-Type", "application/json");
-            connection.setRequestProperty("User-Agent", "LinguaChat-Minecraft-Mod/1.0");
+            connection.setRequestProperty("User-Agent", LinguaChatMod.getUserAgent());
 
             String apiKey = config.getKagiApiKey();
 
@@ -196,7 +196,7 @@ public class KagiTranslateClient implements TranslationProvider {
                 .uri(URI.create(KAGI_TRANSLATE_URL))
                 .timeout(Duration.ofSeconds(30))
                 .header("Content-Type", "application/json")
-                .header("User-Agent", "LinguaChat-Minecraft-Mod/1.0")
+                .header("User-Agent", LinguaChatMod.getUserAgent())
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody));
 
             String apiKey = config.getKagiApiKey();

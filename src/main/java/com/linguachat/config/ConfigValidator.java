@@ -63,6 +63,17 @@ public class ConfigValidator {
     public static ValidationResult validate(ModConfig config) {
         ValidationResult result = new ValidationResult();
 
+        // normalize codes in place: old configs may hold " EN " / "EN" from free-text input
+        String src = normalize(config.getDefaultSourceLang());
+        if (!src.equals(config.getDefaultSourceLang())) {
+            config.setDefaultSourceLang(src);
+            result.setConfigModified(true);
+        }
+        String tgt = normalize(config.getDefaultTargetLang());
+        if (!tgt.equals(config.getDefaultTargetLang())) {
+            config.setDefaultTargetLang(tgt);
+            result.setConfigModified(true);
+        }
         validateLanguageCode(config.getDefaultSourceLang(), "defaultSourceLang", result);
         validateLanguageCode(config.getDefaultTargetLang(), "defaultTargetLang", result);
         validatePreferredTranslator(config, result);
@@ -72,13 +83,17 @@ public class ConfigValidator {
         return result;
     }
 
+    private static String normalize(String code) {
+        return code == null ? "" : code.trim().replace('_', '-').toLowerCase();
+    }
+
     private static void validateLanguageCode(String code, String fieldName, ValidationResult result) {
         if (code == null || code.isEmpty()) {
             result.addError(String.format("Field %s is empty", fieldName));
             return;
         }
 
-        String normalized = code.trim().replace('_', '-').toLowerCase();
+        String normalized = normalize(code);
         if (!"auto".equals(normalized) && !LANGUAGE_CODE_PATTERN.matcher(normalized).matches()) {
             result.addWarning(String.format(
                 "Language code '%s' in field %s does not look like an ISO-639 code",
@@ -133,22 +148,19 @@ public class ConfigValidator {
         boolean providerAvailable;
         if ("deepl".equals(preferred)) {
             String apiKey = config.getDeeplApiKey();
-            providerAvailable = apiKey != null && !apiKey.isEmpty();
+            providerAvailable = apiKey != null && !apiKey.trim().isEmpty();
             if (!providerAvailable) {
                 result.addWarning("DeepL is selected as preferred, but API key is not specified. Will fallback to Google.");
             }
         } else if ("kagi".equals(preferred)) {
             String apiKey = config.getKagiApiKey();
             String sessionToken = config.getKagiSessionToken();
-            providerAvailable = (apiKey != null && !apiKey.isEmpty()) || 
-                               (sessionToken != null && !sessionToken.isEmpty());
+            providerAvailable = (apiKey != null && !apiKey.trim().isEmpty())
+                || (sessionToken != null && !sessionToken.trim().isEmpty());
             if (!providerAvailable) {
                 result.addWarning("Kagi is selected as preferred, but neither API key nor session token is specified. Will fallback to Google.");
             }
-        } else if ("google".equals(preferred)) {
-            providerAvailable = true;
-        } else {
-            result.addWarning("Unknown provider, will use Google");
+        } else { // "google"
             providerAvailable = true;
         }
 

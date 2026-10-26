@@ -6,6 +6,7 @@ import com.linguachat.event.ChatEvents;
 import com.linguachat.translation.TranslationCache;
 import com.linguachat.translation.TranslationManager;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 //? if >=1.18 {
 import org.slf4j.Logger;
@@ -23,6 +24,15 @@ public class LinguaChatMod implements ModInitializer {
     /*public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
     *///?}
     private static TranslationManager translationManager;
+
+    /** Identifying User-Agent for outgoing HTTP requests (Modrinth-style etiquette) */
+    public static String getUserAgent() {
+        String version = FabricLoader.getInstance()
+            .getModContainer(MOD_ID)
+            .map(c -> c.getMetadata().getVersion().getFriendlyString())
+            .orElse("dev");
+        return "LinguaChat/" + version + " (+https://github.com/Lintech-1/LinguaChat)";
+    }
 
     @Override
     public void onInitialize() {

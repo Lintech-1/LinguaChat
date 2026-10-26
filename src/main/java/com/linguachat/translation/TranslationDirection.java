@@ -6,8 +6,6 @@ public enum TranslationDirection {
     CLIENT_TO_SERVER,  // Outgoing messages (client sends to server, translated according to defaultTargetLang)
     SERVER_TO_CLIENT;  // Incoming messages (server sends to client, translated according to defaultTargetLang)
 
-    private static final TranslationManager translationManager = new TranslationManager();
-
     public String getSourceLang() {
         String lang;
         if (this == CLIENT_TO_SERVER) {
@@ -15,7 +13,7 @@ public enum TranslationDirection {
         } else { // SERVER_TO_CLIENT
             lang = "auto"; // Auto-detect language for incoming messages
         }
-        return translationManager.normalizeLanguageCode(lang);
+        return TranslationManager.normalizeLanguageCode(lang);
     }
 
     public String getTargetLang() {
@@ -28,7 +26,7 @@ public enum TranslationDirection {
             // For incoming messages we want to see them in our language
             lang = ModConfig.get().getDefaultTargetLang();
         }
-        return translationManager.normalizeLanguageCode(lang);
+        return TranslationManager.normalizeLanguageCode(lang);
     }
 
     public boolean shouldTranslate() {

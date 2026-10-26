@@ -2,6 +2,7 @@ package com.linguachat.translation.providers;
 
 import com.google.gson.JsonParser;
 import com.google.gson.JsonParseException;
+import com.linguachat.LinguaChatMod;
 import com.linguachat.translation.TranslationLogger;
 
 import java.io.IOException;
@@ -62,6 +63,7 @@ public class GoogleTranslateClient implements TranslationProvider {
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(10000);
             connection.setReadTimeout(10000);
+            connection.setRequestProperty("User-Agent", LinguaChatMod.getUserAgent());
 
             int statusCode = connection.getResponseCode();
 
@@ -88,6 +90,7 @@ public class GoogleTranslateClient implements TranslationProvider {
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .timeout(Duration.ofSeconds(10))
+                .header("User-Agent", LinguaChatMod.getUserAgent())
                 .GET()
                 .build();
 

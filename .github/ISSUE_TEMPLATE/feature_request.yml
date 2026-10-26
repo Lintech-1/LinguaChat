@@ -1,0 +1,49 @@
+name: Feature Request
+description: Suggest an enhancement, a new translation provider, or a chat-display improvement
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea for **LinguaChat**? We appreciate suggestions that improve the chat translation experience!
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Feature Summary
+      description: A concise summary of the proposed feature or improvement.
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation & Problem Statement
+      description: What problem does this address? Why would this be valuable for players?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed Solution
+      description: Describe how you imagine this working (UI, commands, config options, etc.).
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any other mods, workarounds, or existing tools you have considered.
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context
+      description: Add any screenshots, mockups, or examples to illustrate your idea.
+    validations:
+      required: false

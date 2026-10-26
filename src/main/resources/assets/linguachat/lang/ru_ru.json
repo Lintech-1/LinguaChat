@@ -2,7 +2,6 @@
   "key.linguachat.toggle_outbound": "Переключить исходящий перевод",
   "key.linguachat.open_config": "Открыть настройки LinguaChat",
   "category.linguachat": "LinguaChat",
-  
   "linguachat.config.title": "Настройки LinguaChat",
   "linguachat.config.enabled": "Мод: %s",
   "linguachat.config.enabled.on": "§aВключен",
@@ -25,7 +24,6 @@
   "linguachat.config.save": "Сохранить",
   "linguachat.config.cancel": "Отмена",
   "linguachat.config.google_notice": "Google не требует API ключ",
-  
   "linguachat.log.init": "Инициализация мода LinguaChat",
   "linguachat.log.ready": "LinguaChat готов к работе!",
   "linguachat.log.shutdown": "Завершение работы мода LinguaChat",
@@ -70,7 +68,6 @@
   "linguachat.log.sender_entry_not_determined": "Запись отправителя не определена",
   "linguachat.log.sender_key_saved": "Сохранен публичный ключ отправителя",
   "linguachat.log.sender_key_not_determined": "Ключ отправителя не определен",
-
   "linguachat.log.reinit_thread_pool": "Переинициализация пула потоков для перевода",
   "linguachat.log.all_providers_failed": "Все провайдеры перевода не сработали, возвращаем оригинальный текст",
   "linguachat.log.translation_error": "Ошибка при переводе: %s",
@@ -78,7 +75,6 @@
   "linguachat.log.server_connection": "=== Подключение к серверу ===",
   "linguachat.log.server_address": "Сервер: %s",
   "linguachat.log.server_disconnection": "=== Отключение от сервера ===",
-
   "linguachat.log.debug.game_message": "=== ClientPlayNetworkHandlerMixin.onGameMessage ===",
   "linguachat.log.debug.network_message": "Сетевое сообщение: '%s'",
   "linguachat.log.debug.skip_system": "Пропуск системного сообщения: %s",
@@ -92,7 +88,6 @@
   "linguachat.log.debug.translated_to": "Переведено на %s: '%s'",
   "linguachat.log.debug.message_added": "Переведенное сообщение добавлено в чат",
   "linguachat.log.debug.composite_hover": "Создано составное сообщение с эффектом наведения",
-
   "linguachat.log.debug.chathud_mixin_loaded": "ChatHudMixin загружен",
   "linguachat.log.debug.chathud_add_message": "ChatHudMixin.onAddMessage: '%s'",
   "linguachat.log.debug.translated_skip": "Это переведенное сообщение, пропускаем",
@@ -126,12 +121,20 @@
   "linguachat.log.client_init_done": "Клиент LinguaChat инициализирован",
   "linguachat.log.creating_manager": "Создаётся новый экземпляр TranslationManager",
   "linguachat.log.initialized": "LinguaChat успешно инициализирован",
-
   "linguachat.hover.original": "Оригинал: %s",
-
   "linguachat.feedback.outbound_enabled": "§a[LinguaChat] Перевод исходящих сообщений включен",
   "linguachat.feedback.outbound_disabled": "§c[LinguaChat] Перевод исходящих сообщений отключен",
-
   "linguachat.error.translation_failed": "§c[LinguaChat] Ошибка перевода: %s. Показано оригинальное сообщение.",
-  "linguachat.error.outgoing_failed": "§c[LinguaChat] Ошибка перевода: %s. Сообщение НЕ отправлено. Нажми N, чтобы отключить перевод, и отправь без него."
+  "linguachat.error.outgoing_failed": "§c[LinguaChat] Ошибка перевода: %s. Сообщение НЕ отправлено. Нажми N, чтобы отключить перевод, и отправь без него.",
+  "linguachat.log.method_called_26": "=== МЕТОД ВЫЗВАН: ChatListener.showMessageToPlayer (26.x) ===",
+  "linguachat.log.debug.intercept_add_message_meta_26": "=== ПЕРЕХВАТ ChatListener -> ChatComponent.addPlayerMessage с метаданными ===",
+  "linguachat.log.debug.intercept_overlay_26": "=== ПЕРЕХВАТ Hud.setOverlayMessage ===",
+  "linguachat.config.search": "Поиск",
+  "linguachat.error.type.AUTHENTICATION_ERROR": "ошибка аутентификации (проверьте API-ключ)",
+  "linguachat.error.type.RATE_LIMIT_ERROR": "превышен лимит запросов, попробуйте позже",
+  "linguachat.error.type.NETWORK_ERROR": "сетевая ошибка",
+  "linguachat.error.type.PARSE_ERROR": "не удалось разобрать ответ сервиса",
+  "linguachat.error.type.INVALID_LANGUAGE_CODE": "неверный код языка",
+  "linguachat.error.type.SERVER_ERROR": "сервис недоступен (ошибка на его стороне)",
+  "linguachat.error.type.TIMEOUT_ERROR": "превышено время ожидания ответа"
 }

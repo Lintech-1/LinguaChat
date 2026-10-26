@@ -34,6 +34,12 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
+      
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '25'
           cache: 'gradle'
       
       - name: Grant Execute Permission for Gradlew
@@ -132,17 +138,31 @@ jobs:
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           curseforge-id: linguachat
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
-          # sources jars excluded; game versions and dependencies are read from each jar's fabric.mod.json
+          # one release entry with all jars inside; explicit lists below override mc-publish defaults,
+          # whose min-major/min-minor filter collapsed the version range to 1.16.5 on CurseForge
           files: "artifacts/!(*-sources).jar"
+          game-versions: |
+            1.16.5
+            1.18.2
+            1.19.2
+            1.20.1
+            1.21.1
+            1.21.4
+            1.21.5
+            1.21.11
+            26.3
+          java: |
+            8
+            17
+            21
+            25
           name: LinguaChat ${{ steps.version.outputs.version }}
           version: ${{ steps.version.outputs.version }}
           version-type: release
           changelog-file: release_notes.md
           loaders: fabric
-      
+
       - name: Release Summary
         run: |
           echo "✅ Release ${{ github.ref_name }} created successfully!"
-          echo "📦 Uploaded artifacts:"
-          ls -1 artifacts/*.jar | wc -l | xargs echo "  - JAR files:"
-          echo "  - Checksums: checksums.txt"
+          ls -1 artifacts/*.jar | wc -l | xargs echo "  - JAR files published:
