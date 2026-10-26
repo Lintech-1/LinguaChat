@@ -73,11 +73,26 @@ jobs:
           retention-days: 7
 
   release:
-    name: Create Release (Manual Approval Required)
+    # One publish per MC version (like Sodium/ModMenu do): launchers download the PRIMARY
+    # file of a release, so every MC version needs its own release entry with its own jar,
+    # game version and Java requirement - otherwise everyone gets the 1.16.5 jar.
+    name: Publish to Modrinth for ${{ matrix.mc }}
     needs: build
     runs-on: ubuntu-latest
     environment:
       name: production  # This environment requires manual approval
+    strategy:
+      matrix:
+        include:
+          - { mc: 1.16.5,  java: 8 }
+          - { mc: 1.18.2,  java: 17 }
+          - { mc: 1.19.2,  java: 17 }
+          - { mc: 1.20.1,  java: 17 }
+          - { mc: 1.21.1,  java: 21 }
+          - { mc: 1.21.4,  java: 21 }
+          - { mc: 1.21.5,  java: 21 }
+          - { mc: 1.21.11, java: 21 }
+          - { mc: 26.3,    java: 25 }
     
     steps:
       - name: Checkout Repository
@@ -133,15 +148,67 @@ jobs:
               artifacts/*.jar \
               artifacts/checksums.txt
 
-      - name: Publish to Modrinth and CurseForge
+      - name: Publish to Modrinth
         uses: Kira-NT/mc-publish@v3
         with:
           modrinth-id: linguachat
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          # exactly one jar per matrix entry; Modrinth version number gets the MC suffix (3.0.0+1.21.11)
+          files: artifacts/linguachat-${{ matrix.mc }}-${{ steps.version.outputs.version }}.jar
+          game-versions: ${{ matrix.mc }}
+          java: ${{ matrix.java }}
+          name: LinguaChat ${{ steps.version.outputs.version }} for ${{ matrix.mc }}
+          version: ${{ steps.version.outputs.version }}+${{ matrix.mc }}
+          version-type: release
+          changelog-file: release_notes.md
+          loaders: fabric
+          # the unfeature step hits a broken Modrinth v3 route (401) - featured flags are managed manually
+          modrinth-unfeature-mode: none
+
+      - name: Release Summary
+        run: |
+          echo "✅ Release ${{ github.ref_name }} created successfully!"
+          ls -1 artifacts/*.jar | wc -l | xargs echo "  - JAR files published:
+
+  curseforge-release:
+    # CurseForge: ONE release entry with all jars (per-file game versions are not supported
+    # by mc-publish) - after publishing, manually fix each file's game versions on the site
+    name: Publish to CurseForge
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: production  # This environment requires manual approval
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: artifacts/
+
+      - name: Extract Version from Tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Extract changelog section
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          awk -v ver="$VERSION" '
+            /^## / { if ($0 != "## " ver) p=0 }
+            $0 == "## " ver { p=1 }
+            p
+          ' CHANGELOG.md > release_notes.md
+
+      - name: Publish to CurseForge
+        uses: Kira-NT/mc-publish@v3
+        with:
           curseforge-id: linguachat
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
-          # one release entry with all jars inside; explicit lists below override mc-publish defaults,
-          # whose min-major/min-minor filter collapsed the version range to 1.16.5 on CurseForge
           files: "artifacts/!(*-sources).jar"
           game-versions: |
             1.16.5
@@ -163,8 +230,3 @@ jobs:
           version-type: release
           changelog-file: release_notes.md
           loaders: fabric
-
-      - name: Release Summary
-        run: |
-          echo "✅ Release ${{ github.ref_name }} created successfully!"
-          ls -1 artifacts/*.jar | wc -l | xargs echo "  - JAR files published:
