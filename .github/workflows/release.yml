@@ -123,13 +123,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create ${{ github.ref_name }} \
-            --repo ${{ github.repository }} \
-            --title "LinguaChat ${{ steps.version.outputs.version }}" \
-            --notes-file release_notes.md \
-            --generate-notes \
-            artifacts/*.jar \
-            artifacts/checksums.txt
+          # idempotent: re-runs of the workflow won't fail on an existing release
+          gh release view ${{ github.ref_name }} --repo ${{ github.repository }} >/dev/null 2>&1 || \
+            gh release create ${{ github.ref_name }} \
+              --repo ${{ github.repository }} \
+              --title "LinguaChat ${{ steps.version.outputs.version }}" \
+              --notes-file release_notes.md \
+              --generate-notes \
+              artifacts/*.jar \
+              artifacts/checksums.txt
 
       - name: Publish to Modrinth and CurseForge
         uses: Kira-NT/mc-publish@v3
