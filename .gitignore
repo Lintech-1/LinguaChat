@@ -3,3 +3,7 @@
 bin
 build
 versions
+specs/
+.specify/
+.agents/
+ref-code/

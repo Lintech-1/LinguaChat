@@ -13,7 +13,13 @@ public class ModConfig {
     private static ModConfig INSTANCE;
 
     static {
-        Path configDir = FabricLoader.getInstance().getConfigDir();
+        Path configDir;
+        try {
+            net.fabricmc.loader.api.FabricLoader loader = net.fabricmc.loader.api.FabricLoader.getInstance();
+            configDir = (loader != null) ? loader.getConfigDir() : java.nio.file.Paths.get("config");
+        } catch (Throwable ignored) {
+            configDir = java.nio.file.Paths.get("config");
+        }
         CONFIG_PATH = configDir.resolve("linguachat.json");
         LinguaChatMod.LOGGER.info(logText("linguachat.log.config_path", CONFIG_PATH.toAbsolutePath()));
     }
@@ -58,9 +64,10 @@ public class ModConfig {
             if (CONFIG_PATH.toFile().exists()) {
                 try (Reader reader = new InputStreamReader(new FileInputStream(CONFIG_PATH.toFile()), "UTF-8")) {
                     INSTANCE = GSON.fromJson(reader, ModConfig.class);
-                    LinguaChatMod.LOGGER.info(logText("linguachat.log.config_loaded", CONFIG_PATH.toAbsolutePath()));
+                    if (INSTANCE != null) LinguaChatMod.LOGGER.info(logText("linguachat.log.config_loaded", CONFIG_PATH.toAbsolutePath()));
                 }
-            } else {
+            }
+            if (INSTANCE == null) {
                 INSTANCE = new ModConfig();
                 save();
                 LinguaChatMod.LOGGER.info(logText("linguachat.log.config_created", CONFIG_PATH.toAbsolutePath()));
@@ -73,6 +80,7 @@ public class ModConfig {
     }
 
     public static void save() {
+        if (INSTANCE == null) return;
         try {
             CONFIG_PATH.toFile().getParentFile().mkdirs();
             try (Writer writer = new OutputStreamWriter(new FileOutputStream(CONFIG_PATH.toFile()), "UTF-8")) {
