@@ -195,7 +195,8 @@ public class MessageStore {
     }
 
     private static void debugLog(String message) {
-        if (ModConfig.get().isDebugMode()) {
+        ModConfig config = ModConfig.get();
+        if (config != null && config.isDebugMode()) {
             LinguaChatMod.LOGGER.info(message);
         }
     }
